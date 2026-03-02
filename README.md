@@ -12,9 +12,42 @@
   </p>
 </div>
 
+## 📸 The CODEX Experience
+
+### The Discover Page
+CODEX opens into a beautifully curated, Netflix-style Discover interface. It features a rich, dynamic Hero Billboard that highlights trending titles with smooth visual blurring. Browse through a continuously updated list of genres and popular series, all seamlessly integrated without leaving your library.
+
+<div align="center">
+  <img src="./docs/library.png" alt="CODEX Discover View" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+  <br/>
+  <i>Your personalized gateway to thousands of titles, featuring a beautifully organized Manga Library and Discover tab.</i>
+</div>
+
 ---
 
-## ✨ Features
+### Immersive Reading Mode
+Experience your manga without distractions. CODEX's dedicated Reader View eliminates clutter, allowing you to dive into the story. Whether you prefer vertical scrolling or traditional paged reading, the interface adapts entirely to your reading style.
+
+<div align="center">
+  <img src="./docs/reader.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+  <br/>
+  <i>Clean, edge-to-edge reading canvas for maximum immersion.</i>
+</div>
+
+---
+
+### Deep Customization HUD
+Need to tweak your experience? The Reader HUD can be toggled instantly, giving you access to powerful overlay controls. Change reading directions, switch to double-page spreads, leap to specific chapters, or adjust tracking settings—all without interrupting your flow or reloading the page.
+
+<div align="center">
+  <img src="./docs/readerconf.png" alt="CODEX Reader HUD Overlay" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
+  <br/>
+  <i>The unobtrusive, feature-rich Reader HUD overlay for on-the-fly configuration.</i>
+</div>
+
+---
+
+## ✨ Core Features
 
 - 🍿 **Cinematic UI:** A sleek, fully dark-themed interface modeled after the best streaming platforms. Experience features like a Hero Billboard, dynamic blurring, and buttery-smooth transitions.
 - 📚 **Extensible Source Protocol:** Manga content isn't hardcoded. Write tiny JavaScript plugins (`.js` files) to scrape and parse *any* manga website in the world and read it beautifully in the app.
@@ -182,22 +215,6 @@ module.exports = {
 1. **Use `fetchPage(url, referrer)`:** Always use the built-in `fetchPage` instead of standard `fetch`. The Codex engine will automatically bypass cloudflare (via puppeteer fallback) and attach headers!
 2. **Rely on `makeAbsoluteUrl`:** Sometimes websites use relative image links like `/uploads/cover.jpg`. Wrap them in `makeAbsoluteUrl(path, baseUrl)` to fix them.
 3. **Handle missing attributes carefully:** Cover images are sometimes stored in `data-src`, `data-lazy-src`, or `src`. Check all of them before failing.
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-  <img src="./docs/library.png" alt="CODEX Library View" width="800" style={{ borderRadius: '8px' }} />
-  <br/>
-  <i>Your beautifully curated Manga Library</i>
-  <br/><br/>
-  <img src="./docs/reader.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px' }} />
-  <br/>
-  <i>Immersive Reading Experience</i>
-  <br/><br/>
-  <img src="./docs/readerconf.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px' }} />
-</div>
 
 ---
 
