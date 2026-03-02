@@ -1,0 +1,574 @@
+/* Manga Details Page Styles */
+
+.details-page {
+  position: relative;
+}
+
+/* Banner */
+.details-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 350px;
+  background-size: cover;
+  background-position: center top;
+  z-index: 0;
+}
+
+.details-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+      rgba(10, 10, 18, 0.3) 0%,
+      rgba(10, 10, 18, 0.8) 60%,
+      rgba(10, 10, 18, 1) 100%);
+  backdrop-filter: blur(20px);
+}
+
+.details-back-btn {
+  position: fixed;
+  top: var(--space-6);
+  left: calc(var(--sidebar-width) + var(--space-6));
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(8px);
+}
+
+.details-back-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.08);
+}
+
+/* Content */
+.details-content {
+  position: relative;
+  z-index: 1;
+  padding-top: calc(var(--space-8) + 60px);
+  padding-left: var(--space-6);
+}
+
+/* Loading/Error states */
+.details-loading,
+.details-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: 60vh;
+  color: var(--text-secondary);
+}
+
+/* Header with cover */
+.details-header {
+  display: flex;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.details-cover {
+  width: 200px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  flex-shrink: 0;
+}
+
+.details-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.details-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.details-title-alt {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* Meta info */
+.details-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-2) 0;
+}
+
+.details-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid;
+  border-radius: var(--radius-lg);
+  min-width: 60px;
+}
+
+.score-value {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+}
+
+.score-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.details-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.details-badge {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+/* AniList Score */
+.details-anilist-score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.anilist-badge {
+  background-color: #02A9FF;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.anilist-score-select {
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+}
+
+.anilist-score-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Genres */
+.details-genres {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.genre-tag {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--accent-muted);
+  border-radius: var(--radius-full);
+  color: var(--accent-secondary);
+}
+
+/* Authors */
+.details-authors {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* Actions */
+.details-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Sections */
+.details-section {
+  margin-bottom: var(--space-6);
+}
+
+.section-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+/* Synopsis */
+.details-synopsis {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 800px;
+}
+
+/* Chapters section */
+.chapters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.source-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.source-selector label {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.source-select {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.source-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* Chapters list */
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.chapters-loading,
+.chapters-error,
+.chapters-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-tertiary);
+}
+
+/* Chapter Controls */
+.chapters-controls {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.chapter-filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.chapter-filter-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.chapter-filter-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.order-btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.order-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.order-btn.active {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+.chapter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chapter-item:hover {
+  border-color: var(--accent-primary);
+  background-color: var(--bg-hover);
+}
+
+.chapter-name {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.chapter-date {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+/* Chapter Read Toggle */
+.chapter-read-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.chapter-read-toggle:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.chapter-read-toggle.checked {
+  color: #22c55e;
+}
+
+.chapter-read-toggle.checked:hover {
+  color: #16a34a;
+}
+
+/* Chapter item when read */
+.chapter-item.read {
+  opacity: 0.6;
+}
+
+.chapter-item.read .chapter-name {
+  color: var(--text-tertiary);
+}
+
+.chapter-item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* Downloaded Section */
+.downloaded-section {
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.downloaded-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background-color: rgba(34, 197, 94, 0.08);
+  border: none;
+  color: #22c55e;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.downloaded-toggle:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+}
+
+.downloaded-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-item.downloaded {
+  border-left: 3px solid #22c55e;
+  background-color: rgba(34, 197, 94, 0.04);
+}
+
+.chapter-item.downloaded:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.chapter-download-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.chapter-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.chapter-item:hover .chapter-delete-btn {
+  opacity: 1;
+}
+
+.chapter-delete-btn:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Download button on chapter items */
+.chapter-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.chapter-item:hover .chapter-download-btn {
+  opacity: 1;
+}
+
+.chapter-download-btn:hover:not(:disabled) {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: var(--accent-primary);
+}
+
+.chapter-download-btn.downloading {
+  opacity: 1;
+  cursor: default;
+}
+
+.chapter-downloaded-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Tiny spinner for download buttons */
+.spinner.tiny {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .details-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .details-cover {
+    width: 150px;
+    height: 225px;
+  }
+
+  .details-info {
+    align-items: center;
+  }
+
+  .details-genres,
+  .details-badges {
+    justify-content: center;
+  }
+
+  .chapters-header {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  /* Show download buttons on mobile (no hover) */
+  .chapter-download-btn,
+  .chapter-delete-btn {
+    opacity: 1;
+  }
+}

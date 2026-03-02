@@ -1,0 +1,568 @@
+/* Reader Page Styles */
+
+.reader-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.reader-container.mode-webtoon {
+  overflow-y: auto;
+}
+
+/* Loading */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: white;
+  gap: var(--space-4);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #e50914;
+  /* Netflix Red */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   WEBTOON MODE
+   ======================================== */
+.webtoon-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 20px;
+  padding-top: 0;
+}
+
+.webtoon-page {
+  width: 100%;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ========================================
+   PAGE MODE (Single/Double)
+   ======================================== */
+.page-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+}
+
+.reader-page {
+  max-height: 100vh;
+  max-width: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.single-page {
+  max-height: 100vh;
+}
+
+.double-page {
+  display: flex;
+  gap: 0;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.double-page .page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.double-page .reader-page {
+  max-height: 100vh;
+  object-fit: contain;
+  margin: 0;
+  padding: 0;
+}
+
+/* Page wrapper for loading states */
+.page-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.page-loading-skeleton {
+  position: absolute;
+  width: 400px;
+  height: 600px;
+  background: linear-gradient(90deg, #141414 25%, #2a2a2a 50%, #141414 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-lg);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.reader-page.loading {
+  opacity: 0;
+  position: absolute;
+}
+
+.reader-page:not(.loading) {
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+}
+
+/* ========================================
+   PLAYER HUD (Cinematic Overlays)
+   ======================================== */
+.reader-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 50;
+}
+
+.reader-hud.visible {
+  opacity: 1;
+}
+
+.reader-hud.force-hidden {
+  display: none !important;
+}
+
+/* Vertical Left Navigation Sidebar */
+.hud-left-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  z-index: 101;
+}
+
+.hud-left-progress:hover {
+  width: 12px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.progress-cube {
+  flex: 1;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  /* subtle separation */
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.progress-cube:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.progress-cube.read {
+  background: rgba(229, 9, 20, 0.4);
+  /* Faded red for read pages */
+}
+
+.progress-cube.active {
+  background: #e50914;
+  /* Solid red for current page */
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+  transform: scaleY(1.1);
+  z-index: 2;
+}
+
+/* Top Gradient & Controls */
+.hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.hud-left-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.reader-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+  padding: 8px;
+}
+
+.reader-close-btn:hover {
+  transform: scale(1.1);
+  color: #e50914;
+  /* Netflix Red */
+}
+
+.hud-title-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.manga-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  font-family: var(--font-cinematic);
+}
+
+.chapter-info-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.hud-actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.hud-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  border-radius: 50%;
+}
+
+.hud-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+/* Bottom Controls */
+.hud-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 24px 32px;
+  background: transparent;
+  pointer-events: none;
+  /* Let clicks pass through empty space */
+}
+
+/* Nav Groups (Left/Right) */
+.nav-group-left,
+.nav-group-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+  /* Re-enable clicks on the button groups */
+}
+
+.player-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.player-btn svg {
+  transition: transform 0.2s;
+}
+
+.player-btn:hover:not(:disabled) svg {
+  transform: scale(1.15);
+  color: white;
+}
+
+.player-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.player-btn.primary {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-btn.primary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.player-btn.secondary {
+  width: 48px;
+  height: 48px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.player-btn.secondary:hover:not(:disabled) {
+  color: white;
+}
+
+
+/* ========================================
+   SETTINGS PANEL
+   ======================================== */
+.settings-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  background-color: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  z-index: 200;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
+}
+
+.settings-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: white;
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.settings-group {
+  margin-bottom: var(--space-5);
+}
+
+.settings-label {
+  display: block;
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: var(--space-2);
+}
+
+.settings-hint {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.settings-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.settings-btn.active {
+  background-color: rgba(229, 9, 20, 0.2);
+  border-color: #e50914;
+  color: white;
+  font-weight: 600;
+}
+
+.zoom-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.close-settings {
+  width: 100%;
+  margin-top: var(--space-4);
+  background: white;
+  color: black;
+  font-weight: bold;
+  border: none;
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.close-settings:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   CHAPTER NAVIGATION (Webtoon End)
+   ======================================== */
+.chapter-navigation {
+  width: 100%;
+  padding: 60px 20px;
+  margin-top: 40px;
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(229, 9, 20, 0.05) 50%,
+      rgba(229, 9, 20, 0.1) 100%);
+  display: flex;
+  justify-content: center;
+}
+
+.chapter-nav-content {
+  max-width: 500px;
+  text-align: center;
+}
+
+.chapter-nav-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.chapter-nav-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.chapter-nav-buttons .btn {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.chapter-nav-buttons .btn-primary {
+  background: white;
+  color: black;
+}
+
+.chapter-nav-buttons .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.chapter-nav-buttons .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.chapter-nav-buttons .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Toast notification */
+.reader-toast {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background-color: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  z-index: 200;
+  animation: toastIn 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

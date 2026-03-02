@@ -1,0 +1,48 @@
+{
+  "id": "mangahost_br",
+  "name": "MangaHost",
+  "baseUrl": "https://mangahosted.com",
+  "version": "1.0.0",
+  "language": "pt-BR",
+  "iconUrl": "https://mangahosted.com/favicon.ico",
+  "search": {
+    "urlPattern": "/find/{query}",
+    "queryTransform": "underscore",
+    "method": "GET",
+    "selectors": {
+      "container": ".manga-item, .entry",
+      "title": ".title, h3 a, .name",
+      "cover": "img",
+      "coverAttr": "src",
+      "url": "a",
+      "urlAttr": "href"
+    }
+  },
+  "details": {
+    "selectors": {
+      "title": "h1.title, .manga-title",
+      "description": ".sinopse, .description, .synopsis",
+      "author": ".manga-autor, .author",
+      "status": ".manga-status, .status",
+      "genres": ".manga-generos a, .genres a",
+      "cover": ".manga-capa img, .cover img",
+      "coverAttr": "src"
+    }
+  },
+  "chapters": {
+    "selectors": {
+      "container": ".manga-chapters li, .chapters-list li, .cap-list li",
+      "title": "a",
+      "date": ".date, .chapter-date",
+      "url": "a",
+      "urlAttr": "href"
+    },
+    "numberRegex": "Cap(?:ítulo)?[\\s.:]*(\\d+(?:\\.\\d+)?)"
+  },
+  "pages": {
+    "mode": "SCRIPT",
+    "scriptVariable": "images",
+    "cdnVariable": "cdn_url",
+    "imageCombine": "{cdn}{image}"
+  }
+}

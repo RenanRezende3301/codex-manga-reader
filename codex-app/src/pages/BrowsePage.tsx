@@ -1,0 +1,498 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { searchManga, getTopManga, getPublishingManga, getMangaByGenre, getGenres, SearchOptions } from '../api/jikan'
+import './BrowsePage.css'
+
+interface MangaCard {
+  malId: number
+  title: string
+  titleEnglish?: string
+  coverUrl: string
+  score: number
+  genres: string[]
+  status: string
+  type: string
+}
+
+interface CarouselRow {
+  title: string
+  icon: string
+  data: MangaCard[]
+  loading: boolean
+}
+
+const STATUS_OPTIONS = [
+  { value: '', name: 'All' },
+  { value: 'publishing', name: 'Publishing' },
+  { value: 'complete', name: 'Completed' },
+  { value: 'hiatus', name: 'Hiatus' },
+]
+
+const ORDER_OPTIONS = [
+  { value: 'popularity', name: 'Popularity' },
+  { value: 'score', name: 'Score' },
+  { value: 'title', name: 'Title A-Z' },
+  { value: 'start_date', name: 'Newest' },
+]
+
+const SCORE_OPTIONS = [
+  { value: 0, name: 'Any' },
+  { value: 6, name: '6+' },
+  { value: 7, name: '7+' },
+  { value: 8, name: '8+' },
+  { value: 9, name: '9+' },
+]
+
+function BrowsePage() {
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<MangaCard[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [genres, setGenres] = useState<{ id: number; name: string }[]>([{ id: 0, name: 'All' }])
+
+  // Hero Carousel State
+  const [heroMangas, setHeroMangas] = useState<MangaCard[]>([])
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0)
+
+  // Filter states
+  const [selectedGenre, setSelectedGenre] = useState(0)
+  const [selectedStatus, setSelectedStatus] = useState('')
+  const [selectedOrder, setSelectedOrder] = useState('popularity')
+  const [selectedScore, setSelectedScore] = useState(0)
+  const [filtersApplied, setFiltersApplied] = useState(false)
+
+  const [rows, setRows] = useState<CarouselRow[]>([
+    { title: '🔥 Trending', icon: '🔥', data: [], loading: true },
+    { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true },
+    { title: '📖 Publishing Now', icon: '📖', data: [], loading: true },
+  ])
+
+  useEffect(() => {
+    initializePage()
+  }, [])
+
+  const initializePage = async () => {
+    try {
+      // 1. Fetch Genres first
+      const fetchedGenres = await getGenres()
+      let topGenres: typeof fetchedGenres = []
+
+      if (fetchedGenres && fetchedGenres.length > 0) {
+        setGenres([{ id: 0, name: 'All' }, ...fetchedGenres])
+        topGenres = fetchedGenres.slice(0, 3) // Get top 3 most popular genres
+
+        // Dynamically append the top 3 genres as new rows
+        setRows([
+          { title: '🔥 Trending', icon: '🔥', data: [], loading: true },
+          { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true },
+          { title: '📖 Publishing Now', icon: '📖', data: [], loading: true },
+          ...topGenres.map((g: { id: number; name: string }) => ({ title: `🏷️ ${g.name}`, icon: '🏷️', data: [], loading: true }))
+        ])
+      }
+
+      // 2. Load Top Carousels
+      getTopManga('bypopularity', 20).then(data => {
+        setHeroMangas(data.slice(0, 5)) // Keep top 5 for the hero banner
+        updateRow(0, data)
+      }).catch(console.error)
+      getTopManga('favorite', 20).then(data => updateRow(1, data)).catch(console.error)
+      getPublishingManga(20).then(data => updateRow(2, data)).catch(console.error)
+
+      // 3. Load Dynamic Genre Carousels
+      for (let i = 0; i < topGenres.length; i++) {
+        getMangaByGenre(topGenres[i].id, 20)
+          .then(data => updateRow(3 + i, data))
+          .catch(console.error)
+      }
+    } catch (error) {
+      console.error('Failed to initialize page:', error)
+    }
+  }
+
+  // Handle auto-rotation of hero banner
+  useEffect(() => {
+    if (heroMangas.length === 0 || searchQuery.trim() || filtersApplied) return
+    const interval = setInterval(() => {
+      setCurrentHeroIndex(prev => (prev + 1) % heroMangas.length)
+    }, 8000) // Rotate every 8 seconds
+    return () => clearInterval(interval)
+  }, [heroMangas.length, searchQuery, filtersApplied])
+
+  const updateRow = (index: number, data: MangaCard[]) => {
+    setRows(prev => {
+      const newRows = [...prev]
+      if (newRows[index]) {
+        newRows[index] = { ...newRows[index], data, loading: false }
+      }
+      return newRows
+    })
+  }
+
+  const handleSearchInput = (query: string) => {
+    setSearchQuery(query)
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      doSearch()
+    }
+  }
+
+  const doSearch = () => {
+    const hasFilters = selectedGenre > 0 || selectedStatus !== '' || selectedScore > 0
+
+    if (!searchQuery.trim() && !hasFilters) {
+      setSearchResults([])
+      setIsSearching(false)
+      setFiltersApplied(false)
+      return
+    }
+
+    setIsSearching(true)
+    setFiltersApplied(true) // Show results section immediately when search starts
+
+    // Small delay to show loading state
+    setTimeout(async () => {
+      try {
+        const options: SearchOptions = {
+          limit: 25,
+        }
+
+        // Only apply order_by when there's NO text query (filter-only browsing)
+        // When searching by name, let Jikan use its default relevance ranking
+        if (!searchQuery.trim()) {
+          options.orderBy = selectedOrder as SearchOptions['orderBy']
+          options.sort = selectedOrder === 'title' ? 'asc' : 'desc'
+        }
+
+        if (selectedGenre > 0) {
+          options.genres = [selectedGenre]
+        }
+
+        if (selectedStatus) {
+          options.status = selectedStatus as SearchOptions['status']
+        }
+
+        if (selectedScore > 0) {
+          options.minScore = selectedScore
+        }
+
+        const results = await searchManga(searchQuery, options)
+        setSearchResults(results)
+      } catch (error) {
+        console.error('Search failed:', error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 100)
+  }
+
+  const handleMangaClick = (manga: MangaCard) => {
+    // Navigate to manga details page with MAL ID
+    navigate(`/manga/mal/${manga.malId}`)
+  }
+
+
+
+  const renderMangaCard = (manga: MangaCard) => (
+    <div
+      key={manga.malId}
+      className="manga-card"
+      onClick={() => handleMangaClick(manga)}
+    >
+      <img
+        src={manga.coverUrl}
+        alt={manga.title}
+        className="manga-card-image"
+        loading="lazy"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x300/1a1a24/8b5cf6?text=No+Cover'
+        }}
+      />
+      {manga.score > 0 && (
+        <div className="manga-card-badge" style={{ background: 'var(--accent-secondary)', color: 'black' }}>
+          <span className="unread-badge">★ {manga.score.toFixed(1)}</span>
+        </div>
+      )}
+      <div className="manga-card-overlay">
+        <h3 className="manga-card-title">{manga.title}</h3>
+        <span className="manga-card-progress" style={{ color: 'var(--text-tertiary)' }}>
+          {manga.type} • {manga.genres[0]}
+        </span>
+      </div>
+    </div>
+  )
+
+  const renderCarousel = (row: CarouselRow, index: number) => (
+    <div key={index} style={{ marginBottom: 'var(--space-12)' }}>
+      <h2 className="carousel-row-title">{row.title}</h2>
+      <div className="carousel-row">
+        {row.loading ? (
+          // Skeleton loaders
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="manga-card skeleton" />
+          ))
+        ) : (
+          row.data.map(renderMangaCard)
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="page" style={{ padding: 0 }}>
+      {/* Dynamic Netflix-style Hero Billboard */}
+      <div className="browse-hero" style={{
+        position: 'relative',
+        width: '100%',
+        height: (!searchQuery.trim() && !filtersApplied) ? '70vh' : 'auto',
+        minHeight: (!searchQuery.trim() && !filtersApplied) ? '600px' : 'auto',
+        maxHeight: (!searchQuery.trim() && !filtersApplied) ? '900px' : 'none',
+        marginBottom: (!searchQuery.trim() && !filtersApplied) ? 'var(--space-12)' : 'var(--space-8)'
+      }}>
+        {heroMangas.length > 0 && !searchQuery.trim() && !filtersApplied ? (
+          <>
+            {/* Background Image */}
+            <div className="hero-bg" style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url(${heroMangas[currentHeroIndex].coverUrl.replace('large_', '')})`, // Try to get highest res
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 20%',
+              filter: 'blur(3px) brightness(0.5)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 95%, transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 95%, transparent 100%)',
+              transition: 'background-image 1s ease-in-out'
+            }} />
+            {/* Gradient Overlays */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to right, rgba(20,20,20,1) 0%, rgba(20,20,20,0.4) 50%, rgba(20,20,20,0) 100%)'
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, var(--bg-primary) 0%, var(--bg-primary) 5%, transparent 50%)'
+            }} />
+          </>
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(20,20,20,0.9) 0%, var(--bg-primary) 100%)' }} />
+        )}
+
+        {/* Top Search & Filter Bar */}
+        <div style={{ position: 'relative', zIndex: 10, padding: '24px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '600px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search manga, authors, or genres..."
+                value={searchQuery}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px 12px 48px',
+                  fontSize: '16px',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '24px',
+                  color: 'white',
+                  outline: 'none',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'background-color 0.3s ease'
+                }}
+                onFocus={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                onBlur={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+              />
+              {isSearching && (
+                <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' }}>
+                  <div className="spinner small" />
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                width: '46px', height: '46px',
+                borderRadius: '50%',
+                backgroundColor: showFilters ? 'var(--error)' : 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'white',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Quick Filter Pills (hidden during heavy search for focus) */}
+          {(!searchQuery.trim() || filtersApplied) && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '800px', marginTop: '16px' }}>
+              {genres.slice(1, 9).map(g => (
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    setSelectedGenre(selectedGenre === g.id ? 0 : g.id)
+                    setTimeout(() => doSearch(), 50)
+                  }}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '50px',
+                    backgroundColor: selectedGenre === g.id ? 'var(--error)' : 'rgba(255,255,255,0.1)',
+                    color: selectedGenre === g.id ? 'white' : 'var(--text-secondary)',
+                    border: `1px solid ${selectedGenre === g.id ? 'var(--error)' : 'rgba(255,255,255,0.1)'}`,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                    fontSize: '13px',
+                    backdropFilter: 'blur(5px)'
+                  }}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Advanced Filters Panel */}
+          {showFilters && (
+            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.6)', borderRadius: '12px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
+              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
+              </select>
+              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedScore} onChange={(e) => { setSelectedScore(Number(e.target.value)); setTimeout(() => doSearch(), 50) }}>
+                {SCORE_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
+              </select>
+              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedOrder} onChange={(e) => { setSelectedOrder(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                {ORDER_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ color: 'black' }}>{o.name}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Hero Content Area */}
+        {heroMangas.length > 0 && !searchQuery.trim() && !filtersApplied && (
+          <div className="hero-content" style={{
+            position: 'absolute',
+            bottom: '40px', left: '40px',
+            padding: '40px 0',
+            maxWidth: '600px',
+            zIndex: 5
+          }}>
+            {/* Status / Top 1 Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span style={{ background: 'var(--error)', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 800, letterSpacing: '1px' }}>TOP TRENDING</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>#{currentHeroIndex + 1} Today</span>
+            </div>
+
+            <h1 style={{
+              fontSize: '4rem',
+              fontWeight: 900,
+              lineHeight: 1.1,
+              marginBottom: '16px',
+              textShadow: '0 4px 10px rgba(0,0,0,0.8)'
+            }}>
+              {heroMangas[currentHeroIndex].title}
+            </h1>
+            <p style={{
+              fontSize: '1.2rem',
+              color: 'var(--text-secondary)',
+              marginBottom: '32px',
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}>
+              {(heroMangas[currentHeroIndex] as any).synopsis || 'Experience the acclaimed manga. Add to your list and read now.'}
+            </p>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button
+                className="btn"
+                style={{
+                  backgroundColor: 'white', color: 'black',
+                  padding: '12px 32px', fontSize: '18px', fontWeight: 700,
+                  borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '12px'
+                }}
+                onClick={() => handleMangaClick(heroMangas[currentHeroIndex])}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Read Chapter 1
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{
+                  backgroundColor: 'rgba(109, 109, 110, 0.7)', color: 'white',
+                  backdropFilter: 'blur(5px)', border: 'none',
+                  padding: '12px 32px', fontSize: '18px', fontWeight: 700,
+                  borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '12px'
+                }}
+                onClick={() => handleMangaClick(heroMangas[currentHeroIndex])}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                More Details
+              </button>
+            </div>
+
+            {/* Carousel Navigation Indicators */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '40px' }}>
+              {heroMangas.map((_, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setCurrentHeroIndex(idx)}
+                  style={{
+                    width: idx === currentHeroIndex ? '24px' : '8px',
+                    height: '8px',
+                    borderRadius: '4px',
+                    backgroundColor: idx === currentHeroIndex ? 'var(--error)' : 'rgba(255,255,255,0.4)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Search Results or Carousels */}
+      <div className="page-content" style={{ marginTop: 0 }}>
+        {filtersApplied || searchQuery.trim() ? (
+          <div style={{ padding: '0 var(--space-10)' }}>
+            <h2 className="carousel-row-title" style={{ marginBottom: 'var(--space-6)' }}>
+              {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Filtered Results'}
+            </h2>
+            <div className="manga-grid">
+              {searchResults.length > 0 ? (
+                searchResults.map(renderMangaCard)
+              ) : !isSearching ? (
+                <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
+                  <h2 className="empty-state-title">No results found</h2>
+                  <p className="empty-state-description">Try adjusting your search or filters.</p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div>
+            {rows.map(renderCarousel)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default BrowsePage

@@ -1,0 +1,77 @@
+{
+  "name": "codex",
+  "version": "1.0.0",
+  "description": "CODEX - Desktop Manga Reader with Declarative Source Protocol",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "keywords": [
+    "manga",
+    "reader",
+    "electron",
+    "desktop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
+    "axios": "^1.6.0",
+    "better-sqlite3": "^12.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "electron-squirrel-startup": "^1.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "undici": "^5.28.4",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.0",
+    "electron": "^40.0.0",
+    "electron-builder": "^24.9.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.codex.mangareader",
+    "productName": "CODEX",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "mangas_cc",
+  "name": "Mangás.cc",
+  "baseUrl": "https://mangas.cc",
+  "version": "1.0.0",
+  "language": "pt-BR",
+  "iconUrl": "https://mangas.cc/favicon.ico",
+  "search": {
+    "urlPattern": "/?s={query}",
+    "method": "GET",
+    "selectors": {
+      "container": ".listupd .bs",
+      "title": ".tt",
+      "cover": "img",
+      "coverAttr": "src",
+      "url": "a",
+      "urlAttr": "href"
+    }
+  },
+  "details": {
+    "selectors": {
+      "title": ".entry-title",
+      "description": ".entry-content p",
+      "author": ".imptdt:contains('Autor') a",
+      "status": ".imptdt:contains('Status') i",
+      "genres": ".mgen a",
+      "cover": ".thumb img",
+      "coverAttr": "src"
+    }
+  },
+  "chapters": {
+    "selectors": {
+      "container": "#chapterlist li",
+      "title": ".chapternum",
+      "date": ".chapterdate",
+      "url": "a",
+      "urlAttr": "href"
+    },
+    "numberRegex": "Cap(?:ítulo)?[\\s.:]*(\\d+(?:\\.\\d+)?)"
+  },
+  "pages": {
+    "mode": "DOM",
+    "selectors": {
+      "container": "#readerarea",
+      "image": "img",
+      "imageAttr": "src"
+    }
+  }
+}

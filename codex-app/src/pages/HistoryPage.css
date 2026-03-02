@@ -1,0 +1,97 @@
+/* History Page Styles */
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.history-list {
+  max-width: 800px;
+}
+
+.history-group {
+  margin-bottom: var(--space-6);
+}
+
+.history-date {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.history-item:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.history-item.skeleton {
+  height: 80px;
+  margin-bottom: var(--space-2);
+}
+
+.history-cover {
+  width: 50px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.history-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-manga-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-chapter {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.history-time {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.history-arrow {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.history-item:hover .history-arrow {
+  transform: translateX(4px);
+  color: var(--accent-primary);
+}
+
+.history-loading {
+  max-width: 800px;
+}
