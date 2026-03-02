@@ -219,5 +219,5 @@ module.exports = {
 ---
 
 <div align="center">
-  <p>Made with ❤️ by Zerobytes.</p>
+  <p>By Zerobytes</p>
 </div>
