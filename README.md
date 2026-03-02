@@ -15,34 +15,28 @@
 ## 📸 The CODEX Experience
 
 ### The Discover Page
-CODEX opens into a beautifully curated, Netflix-style Discover interface. It features a rich, dynamic Hero Billboard that highlights trending titles with smooth visual blurring. Browse through a continuously updated list of genres and popular series, all seamlessly integrated without leaving your library.
+Netflix-style Discover tab. It features a dynamic Hero Billboard panel that highlights trending titles. Browse a continuously updated list of genres and popular series.
 
 <div align="center">
   <img src="./docs/library.png" alt="CODEX Discover View" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
-  <br/>
-  <i>Your personalized gateway to thousands of titles, featuring a beautifully organized Manga Library and Discover tab.</i>
 </div>
 
 ---
 
 ### Immersive Reading Mode
-Experience your manga without distractions. CODEX's dedicated Reader View eliminates clutter, allowing you to dive into the story. Whether you prefer vertical scrolling or traditional paged reading, the interface adapts entirely to your reading style.
+Experience your manga without distractions. The dedicated Reader View eliminates clutter, allowing you to dive into the story with support for vertical scrolling or traditional paged reading.
 
 <div align="center">
   <img src="./docs/reader.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
-  <br/>
-  <i>Clean, edge-to-edge reading canvas for maximum immersion.</i>
 </div>
 
 ---
 
-### Deep Customization HUD
-Need to tweak your experience? The Reader HUD can be toggled instantly, giving you access to powerful overlay controls. Change reading directions, switch to double-page spreads, leap to specific chapters, or adjust tracking settings—all without interrupting your flow or reloading the page.
+### Reader Settings
+A simple and powerful settings menu. Instantly adjust the Reading Mode (Single, Double, or Webtoon), configure your preferred reading direction (Left to Right or Right to Left), and control the zoom level to perfectly fit your screen.
 
 <div align="center">
-  <img src="./docs/readerconf.png" alt="CODEX Reader HUD Overlay" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
-  <br/>
-  <i>The unobtrusive, feature-rich Reader HUD overlay for on-the-fly configuration.</i>
+  <img src="./docs/readerconf.png" alt="CODEX Reader Settings" width="800" style={{ borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} />
 </div>
 
 ---
