@@ -53,6 +53,11 @@ Make sure you have [Node.js](https://nodejs.org/) (v18+) and npm installed.
 
 ## 🔌 How to Create Custom Sources
 
+> [!WARNING]
+> **Liability and Content Disclaimer**
+> CODEX is an un-opinionated, open-source tool designed purely as a web browser for manga layouts. **The developers of CODEX do not host, provide, or affiliate with any manga content or sources.** 
+> By using CODEX or creating custom source plugins (`.js` files), you acknowledge that you are responsible for the content you access. The creators are not liable for any copyrighted material loaded through third-party scripts.
+
 CODEX uses a **Declarative Source Protocol**. This means the app acts as a browser, while *sources* act as instructions on where to look for manga, chapters, and pages.
 
 You can create unlimited sources and put them in your `codex-app/sources` folder!
@@ -190,6 +195,8 @@ module.exports = {
   <img src="./docs/reader.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px' }} />
   <br/>
   <i>Immersive Reading Experience</i>
+  <br/><br/>
+  <img src="./docs/readerconf.png" alt="CODEX Reader View" width="800" style={{ borderRadius: '8px' }} />
 </div>
 
 ---
