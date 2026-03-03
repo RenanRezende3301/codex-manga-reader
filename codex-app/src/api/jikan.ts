@@ -300,12 +300,22 @@ export async function getGenres() {
   const data = await apiRequest('/genres/manga');
   // Return early if array is empty or malformed
   if (!data?.data || !Array.isArray(data.data)) return [];
+  // Jikan sometimes returns duplicate IDs across different categories (Genres vs Themes)
+  // We need to deduplicate them using a Set or Map so React doesn't throw Key warnings
+  const uniqueMetadata = new Map();
 
-  return data.data.map((g: any) => ({
-    id: g.mal_id,
-    name: g.name,
-    count: g.count
-  })).sort((a: any, b: any) => b.count - a.count); // Sort by popularity
+  data.data.forEach((g: any) => {
+    if (!uniqueMetadata.has(g.mal_id)) {
+      uniqueMetadata.set(g.mal_id, {
+        id: g.mal_id,
+        name: g.name,
+        count: g.count
+      })
+    }
+  });
+
+  return Array.from(uniqueMetadata.values())
+    .sort((a: any, b: any) => b.count - a.count); // Sort by popularity
 }
 
 // Genre IDs
