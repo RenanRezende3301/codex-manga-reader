@@ -144,7 +144,8 @@ async function fetchChaptersFromSource(sourceId, mangaUrl) {
     const fs = require('fs');
 
     // Determine sources directory
-    const isDev = process.env.NODE_ENV === 'development' || !require('electron').app.isPackaged;
+    const isPackaged = require('electron').app.isPackaged || __dirname.includes('app.asar');
+    const isDev = !isPackaged && process.env.NODE_ENV === 'development';
     const sourcesDir = isDev
       ? path.join(__dirname, '../../sources')
       : path.join(require('electron').app.getPath('userData'), 'sources');

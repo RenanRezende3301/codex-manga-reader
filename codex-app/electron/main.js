@@ -54,7 +54,8 @@ const createWindow = () => {
   });
 
   // Load the app
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  const isPackaged = app.isPackaged || __dirname.includes('app.asar');
+  const isDev = !isPackaged && process.env.NODE_ENV === 'development';
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
