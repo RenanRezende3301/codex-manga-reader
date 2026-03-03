@@ -10,7 +10,7 @@ function getDbPath() {
   if (dbPath) return dbPath;
 
   const isPackaged = app.isPackaged || __dirname.includes('app.asar');
-  const isDev = !isPackaged && process.env.NODE_ENV === 'development';
+  const isDev = !isPackaged;
 
   if (isDev) {
     // Store in project directory during development

@@ -38,7 +38,7 @@ let sourcePlugins = {};
  */
 function initDownloadManager(onProgress, plugins) {
   const isPackaged = app.isPackaged || __dirname.includes('app.asar');
-  const isDev = !isPackaged && process.env.NODE_ENV === 'development';
+  const isDev = !isPackaged;
 
   if (isDev) {
     CONFIG.downloadPath = path.join(__dirname, '../../downloads');

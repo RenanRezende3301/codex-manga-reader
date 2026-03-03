@@ -1,6 +1,25 @@
 const { ipcMain, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const Module = require('module');
+
+// Enable plugins outside app.asar to require bundled dependencies like 'axios' and 'cheerio'
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function (request) {
+  try {
+    return originalRequire.apply(this, arguments);
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      try {
+        // Fallback to the main process context to resolve bundled dependencies
+        return originalRequire.call(module, request);
+      } catch (fallbackErr) {
+        throw err;
+      }
+    }
+    throw err;
+  }
+};
 
 function copyDirSync(src, dest) {
   if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
@@ -19,7 +38,8 @@ function copyDirSync(src, dest) {
 }
 
 function getSourcesDir() {
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  const isPackaged = app.isPackaged || __dirname.includes('app.asar');
+  const isDev = !isPackaged;
   if (isDev) {
     return path.join(__dirname, '../../sources');
   }
