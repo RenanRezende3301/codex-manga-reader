@@ -54,6 +54,8 @@ function BrowsePage() {
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([{ id: 0, name: 'All' }])
   const [searchPage, setSearchPage] = useState(1)
   const [searchHasNextPage, setSearchHasNextPage] = useState(false)
+  const [genreSearchInput, setGenreSearchInput] = useState('')
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false)
 
   // Hero Carousel State
   const [heroMangas, setHeroMangas] = useState<MangaCard[]>([])
@@ -150,7 +152,6 @@ function BrowsePage() {
       }
       return [...prev, genreId]
     })
-    setTimeout(() => doSearch(), 50)
   }
 
   const doSearch = (page = 1, append = false) => {
@@ -440,44 +441,142 @@ function BrowsePage() {
             <div style={{ marginTop: '16px', padding: '24px', background: 'rgba(0,0,0,0.6)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '900px', backdropFilter: 'blur(10px)' }}>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
                   {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
                 </select>
-                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedScore} onChange={(e) => { setSelectedScore(Number(e.target.value)); setTimeout(() => doSearch(), 50) }}>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedScore} onChange={(e) => setSelectedScore(Number(e.target.value))}>
                   {SCORE_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
                 </select>
-                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedOrder} onChange={(e) => { setSelectedOrder(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedOrder} onChange={(e) => setSelectedOrder(e.target.value)}>
                   {ORDER_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ color: 'black' }}>{o.name}</option>)}
                 </select>
+
+                {/* Searchable Custom Genre Select */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search genres..."
+                    value={genreSearchInput}
+                    onChange={(e) => {
+                      setGenreSearchInput(e.target.value)
+                      setShowGenreDropdown(true)
+                    }}
+                    onFocus={() => setShowGenreDropdown(true)}
+                    style={{
+                      padding: '8px 16px',
+                      background: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      outline: 'none',
+                      width: '180px'
+                    }}
+                  />
+                  {showGenreDropdown && (
+                    <>
+                      <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                        onClick={() => setShowGenreDropdown(false)}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 4px)',
+                        left: 0,
+                        width: '200px',
+                        maxHeight: '250px',
+                        overflowY: 'auto',
+                        background: '#1a1a1a',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        zIndex: 50,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                      }}>
+                        {genres.filter(g => g.id !== 0 && g.name.toLowerCase().includes(genreSearchInput.toLowerCase())).map(g => (
+                          <div
+                            key={g.id}
+                            onClick={() => {
+                              if (!selectedGenres.includes(g.id)) {
+                                toggleGenre(g.id)
+                              }
+                              setGenreSearchInput('')
+                              setShowGenreDropdown(false)
+                            }}
+                            style={{
+                              padding: '10px 16px',
+                              cursor: 'pointer',
+                              color: selectedGenres.includes(g.id) ? 'var(--error)' : 'white',
+                              backgroundColor: 'transparent',
+                              fontSize: '14px',
+                              borderBottom: '1px solid rgba(255,255,255,0.05)'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            {g.name}
+                          </div>
+                        ))}
+                        {genres.filter(g => g.id !== 0 && g.name.toLowerCase().includes(genreSearchInput.toLowerCase())).length === 0 && (
+                          <div style={{ padding: '10px 16px', color: 'var(--text-tertiary)', fontSize: '14px' }}>No genres found.</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Master Genre Selector */}
-              <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>All Genres</h4>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {genres.filter(g => g.id !== 0).map(g => {
-                    const isSelected = selectedGenres.includes(g.id);
-                    return (
-                      <button
-                        key={g.id}
-                        onClick={() => toggleGenre(g.id)}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '4px',
-                          backgroundColor: isSelected ? 'var(--error)' : 'rgba(255,255,255,0.05)',
-                          color: isSelected ? 'white' : 'var(--text-tertiary)',
-                          border: `1px solid ${isSelected ? 'var(--error)' : 'transparent'}`,
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          transition: 'all 0.1s'
-                        }}
-                      >
-                        {g.name}
-                      </button>
-                    )
-                  })}
+              {/* Selected Genres Pills */}
+              {selectedGenres.length > 0 && (
+                <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {selectedGenres.map(gid => {
+                      const genre = genres.find(g => g.id === gid)
+                      if (!genre) return null
+                      return (
+                        <button
+                          key={gid}
+                          onClick={() => toggleGenre(gid)}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '50px',
+                            backgroundColor: 'var(--error)',
+                            color: 'white',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {genre.name}
+                          <span style={{ fontSize: '16px', lineHeight: 1 }}>×</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
+              )}
+
+              {/* Explicit Apply Filters Button */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+                <button
+                  className="btn"
+                  onClick={() => doSearch()}
+                  style={{
+                    padding: '12px 32px',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--error)',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: '16px',
+                    width: '100%',
+                    maxWidth: '300px'
+                  }}
+                >
+                  Apply Filters & Search
+                </button>
               </div>
 
             </div>
