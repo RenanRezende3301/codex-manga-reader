@@ -1,6 +1,48 @@
-const { ipcMain } = require('electron');
+const { ipcMain, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+function copyDirSync(src, dest) {
+  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      if (!fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+  }
+}
+
+function getSourcesDir() {
+  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  if (isDev) {
+    return path.join(__dirname, '../../sources');
+  }
+
+  const userDataPath = app.getPath('userData');
+  const userSourcesDir = path.join(userDataPath, 'sources');
+
+  if (!fs.existsSync(userSourcesDir)) {
+    fs.mkdirSync(userSourcesDir, { recursive: true });
+
+    // Copy ALL bundled sources (including lib folder) on first run
+    const bundledSourcesDir = path.join(__dirname, '../../sources');
+    if (fs.existsSync(bundledSourcesDir)) {
+      try {
+        copyDirSync(bundledSourcesDir, userSourcesDir);
+      } catch (err) {
+        console.error('[Sources] Failed to copy bundled sources:', err);
+      }
+    }
+  }
+
+  return userSourcesDir;
+}
 
 // Reference to loaded source plugins (accessible externally)
 let loadedSources = {};
@@ -18,7 +60,7 @@ const CACHE_TTL = 1000 * 60 * 15; // 15 minutes
  * Each plugin is a .js file that exports: { id, name, baseUrl, search, getChapters, getPages, ... }
  */
 function loadSources() {
-  const sourcesDir = path.join(__dirname, '../../sources');
+  const sourcesDir = getSourcesDir();
   const sources = {};
 
   try {
@@ -224,7 +266,7 @@ function registerSourceHandlers() {
         fileName = `source_${Date.now()}.js`;
       }
 
-      const sourcesDir = path.join(__dirname, '../../sources');
+      const sourcesDir = getSourcesDir();
       const filePath = path.join(sourcesDir, fileName);
 
       fs.writeFileSync(filePath, content, 'utf-8');
@@ -249,7 +291,7 @@ function registerSourceHandlers() {
       const idMatch = jsContent.match(/(?:const|let|var)\s+id\s*=\s*['"]([^'"]+)['"]/);
       const fileName = idMatch ? `${idMatch[1]}.js` : `source_${Date.now()}.js`;
 
-      const sourcesDir = path.join(__dirname, '../../sources');
+      const sourcesDir = getSourcesDir();
       const filePath = path.join(sourcesDir, fileName);
 
       fs.writeFileSync(filePath, jsContent, 'utf-8');
@@ -270,7 +312,7 @@ function registerSourceHandlers() {
     console.log(`[IPC] sources:remove - ${sourceId}`);
 
     try {
-      const sourcesDir = path.join(__dirname, '../../sources');
+      const sourcesDir = getSourcesDir();
 
       // Try .js extension
       const jsPath = path.join(sourcesDir, `${sourceId}.js`);
