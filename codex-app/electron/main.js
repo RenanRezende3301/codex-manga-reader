@@ -55,6 +55,26 @@ const createWindow = () => {
 
   // Load the app
   const isPackaged = app.isPackaged || __dirname.includes('app.asar');
+  // Configure global network session to bypass referer checks
+  const { session } = require('electron');
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    // Determine the most likely referer based on the request URL
+    let referer = 'https://google.com/';
+    if (details.url.includes('azmanga.net') || details.url.includes('lermangas.me')) {
+      referer = 'https://lermangas.me/';
+    } else if (details.url.includes('mangalivre')) {
+      referer = 'https://mangalivre.net/';
+    } else if (details.url.match(/https?:\/\/[^\/]+/)) {
+      // Fallback: use the origin of the image host itself
+      referer = details.url.match(/https?:\/\/[^\/]+\//)[0];
+    }
+
+    details.requestHeaders['Referer'] = referer;
+    details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+    callback({ authorize: true, requestHeaders: details.requestHeaders });
+  });
+
   const isDev = !isPackaged;
 
   if (isDev) {
