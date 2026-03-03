@@ -162,6 +162,23 @@ function normalizeManga(jikanManga: any) {
 }
 
 /**
+ * Common paginated response wrapper
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    last_visible_page: number;
+    has_next_page: boolean;
+    current_page: number;
+    items: {
+      count: number;
+      total: number;
+      per_page: number;
+    };
+  };
+}
+
+/**
  * Search manga with advanced filters
  */
 export interface SearchOptions {
@@ -171,11 +188,13 @@ export interface SearchOptions {
   genres?: number[]
   status?: 'publishing' | 'complete' | 'hiatus' | 'discontinued'
   minScore?: number
+  page?: number
 }
 
-export async function searchManga(query: string, options: SearchOptions = {}) {
+export async function searchManga(query: string, options: SearchOptions = {}): Promise<PaginatedResponse<any>> {
   const params = new URLSearchParams({
     limit: (options.limit || 25).toString(),
+    page: (options.page || 1).toString(),
     sfw: 'true',
   })
 
@@ -200,62 +219,78 @@ export async function searchManga(query: string, options: SearchOptions = {}) {
     params.set('min_score', options.minScore.toString())
   }
 
-  const data = await apiRequest(`/manga?${params}`)
-  return data.data.map(normalizeManga)
+  const response = await apiRequest(`/manga?${params}`)
+  return {
+    data: response.data.map(normalizeManga),
+    pagination: response.pagination
+  }
 }
 
 /**
  * Get top manga
  */
-export async function getTopManga(filter = 'bypopularity', limit = 25) {
+export async function getTopManga(filter = 'bypopularity', limit = 25, page = 1): Promise<PaginatedResponse<any>> {
   const params = new URLSearchParams({
     filter,
     limit: limit.toString(),
+    page: page.toString(),
     sfw: 'true',
   });
 
-  const data = await apiRequest(`/top/manga?${params}`);
-  return data.data.map(normalizeManga);
+  const response = await apiRequest(`/top/manga?${params}`);
+  return {
+    data: response.data.map(normalizeManga),
+    pagination: response.pagination
+  }
 }
 
 /**
  * Get manga by genre
  */
-export async function getMangaByGenre(genreId: number, limit = 25) {
+export async function getMangaByGenre(genreId: number, limit = 25, page = 1): Promise<PaginatedResponse<any>> {
   const params = new URLSearchParams({
     genres: genreId.toString(),
     limit: limit.toString(),
+    page: page.toString(),
     order_by: 'score',
     sort: 'desc',
     sfw: 'true',
   });
 
-  const data = await apiRequest(`/manga?${params}`);
-  return data.data.map(normalizeManga);
+  const response = await apiRequest(`/manga?${params}`);
+  return {
+    data: response.data.map(normalizeManga),
+    pagination: response.pagination
+  }
 }
 
 /**
  * Get manga by ID
  */
 export async function getMangaById(malId: number) {
-  const data = await apiRequest(`/manga/${malId}/full`);
-  return normalizeManga(data.data);
+  const response = await apiRequest(`/manga/${malId}/full`);
+  // ID fetch is always a single object, not a paginated array
+  return normalizeManga(response.data);
 }
 
 /**
  * Get currently publishing manga
  */
-export async function getPublishingManga(limit = 25) {
+export async function getPublishingManga(limit = 25, page = 1): Promise<PaginatedResponse<any>> {
   const params = new URLSearchParams({
     status: 'publishing',
     order_by: 'popularity',
-    sort: 'asc',
+    sort: 'desc',
     limit: limit.toString(),
+    page: page.toString(),
     sfw: 'true',
   });
 
-  const data = await apiRequest(`/manga?${params}`);
-  return data.data.map(normalizeManga);
+  const response = await apiRequest(`/manga?${params}`);
+  return {
+    data: response.data.map(normalizeManga),
+    pagination: response.pagination
+  }
 }
 
 /**

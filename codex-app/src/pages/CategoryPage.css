@@ -1,0 +1,33 @@
+.manga-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-4);
+  padding-bottom: var(--space-8);
+}
+
+@media (min-width: 1200px) {
+  .manga-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+.manga-card.skeleton {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}

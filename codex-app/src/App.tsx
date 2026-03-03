@@ -8,6 +8,7 @@ import HistoryPage from './pages/HistoryPage'
 import DownloadsPage from './pages/DownloadsPage'
 import SettingsPage from './pages/SettingsPage'
 import SourcesPage from './pages/SourcesPage'
+import CategoryPage from './pages/CategoryPage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="downloads" element={<DownloadsPage />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="discovery/:type/:id?" element={<CategoryPage />} />
       </Route>
       <Route path="/reader/:sourceId/:chapterId" element={<ReaderPage />} />
     </Routes>

@@ -19,6 +19,8 @@ interface CarouselRow {
   icon: string
   data: MangaCard[]
   loading: boolean
+  genreId?: number
+  path?: string // Route path for View All
 }
 
 const STATUS_OPTIONS = [
@@ -50,22 +52,24 @@ function BrowsePage() {
   const [isSearching, setIsSearching] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([{ id: 0, name: 'All' }])
+  const [searchPage, setSearchPage] = useState(1)
+  const [searchHasNextPage, setSearchHasNextPage] = useState(false)
 
   // Hero Carousel State
   const [heroMangas, setHeroMangas] = useState<MangaCard[]>([])
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0)
 
   // Filter states
-  const [selectedGenre, setSelectedGenre] = useState(0)
+  const [selectedGenres, setSelectedGenres] = useState<number[]>([])
   const [selectedStatus, setSelectedStatus] = useState('')
   const [selectedOrder, setSelectedOrder] = useState('popularity')
   const [selectedScore, setSelectedScore] = useState(0)
   const [filtersApplied, setFiltersApplied] = useState(false)
 
   const [rows, setRows] = useState<CarouselRow[]>([
-    { title: '🔥 Trending', icon: '🔥', data: [], loading: true },
-    { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true },
-    { title: '📖 Publishing Now', icon: '📖', data: [], loading: true },
+    { title: '🔥 Trending', icon: '🔥', data: [], loading: true, path: '/discovery/trending' },
+    { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true, path: '/discovery/top' },
+    { title: '📖 Publishing Now', icon: '📖', data: [], loading: true, path: '/discovery/publishing' },
   ])
 
   useEffect(() => {
@@ -84,25 +88,25 @@ function BrowsePage() {
 
         // Dynamically append the top 3 genres as new rows
         setRows([
-          { title: '🔥 Trending', icon: '🔥', data: [], loading: true },
-          { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true },
-          { title: '📖 Publishing Now', icon: '📖', data: [], loading: true },
-          ...topGenres.map((g: { id: number; name: string }) => ({ title: `🏷️ ${g.name}`, icon: '🏷️', data: [], loading: true }))
+          { title: '🔥 Trending', icon: '🔥', data: [], loading: true, path: '/discovery/trending' },
+          { title: '⭐ Top Rated', icon: '⭐', data: [], loading: true, path: '/discovery/top' },
+          { title: '📖 Publishing Now', icon: '📖', data: [], loading: true, path: '/discovery/publishing' },
+          ...topGenres.map((g: { id: number; name: string }) => ({ title: `🏷️ ${g.name}`, icon: '🏷️', data: [], loading: true, genreId: g.id }))
         ])
       }
 
       // 2. Load Top Carousels
-      getTopManga('bypopularity', 20).then(data => {
-        setHeroMangas(data.slice(0, 5)) // Keep top 5 for the hero banner
-        updateRow(0, data)
+      getTopManga('bypopularity', 20, 1).then(res => {
+        setHeroMangas(res.data.slice(0, 5)) // Keep top 5 for the hero banner
+        updateRow(0, res.data)
       }).catch(console.error)
-      getTopManga('favorite', 20).then(data => updateRow(1, data)).catch(console.error)
-      getPublishingManga(20).then(data => updateRow(2, data)).catch(console.error)
+      getTopManga('favorite', 20, 1).then(res => updateRow(1, res.data)).catch(console.error)
+      getPublishingManga(20, 1).then(res => updateRow(2, res.data)).catch(console.error)
 
       // 3. Load Dynamic Genre Carousels
       for (let i = 0; i < topGenres.length; i++) {
-        getMangaByGenre(topGenres[i].id, 20)
-          .then(data => updateRow(3 + i, data))
+        getMangaByGenre(topGenres[i].id, 20, 1)
+          .then(res => updateRow(3 + i, res.data))
           .catch(console.error)
       }
     } catch (error) {
@@ -139,24 +143,40 @@ function BrowsePage() {
     }
   }
 
-  const doSearch = () => {
-    const hasFilters = selectedGenre > 0 || selectedStatus !== '' || selectedScore > 0
+  const toggleGenre = (genreId: number) => {
+    setSelectedGenres(prev => {
+      if (prev.includes(genreId)) {
+        return prev.filter(id => id !== genreId)
+      }
+      return [...prev, genreId]
+    })
+    setTimeout(() => doSearch(), 50)
+  }
+
+  const doSearch = (page = 1, append = false) => {
+    const hasFilters = selectedGenres.length > 0 || selectedStatus !== '' || selectedScore > 0
 
     if (!searchQuery.trim() && !hasFilters) {
       setSearchResults([])
       setIsSearching(false)
       setFiltersApplied(false)
+      setSearchPage(1)
+      setSearchHasNextPage(false)
       return
     }
 
     setIsSearching(true)
-    setFiltersApplied(true) // Show results section immediately when search starts
+    if (!append) {
+      setFiltersApplied(true) // Show results section immediately when search starts
+      setSearchPage(1)
+    }
 
     // Small delay to show loading state
     setTimeout(async () => {
       try {
         const options: SearchOptions = {
           limit: 25,
+          page: page
         }
 
         // Only apply order_by when there's NO text query (filter-only browsing)
@@ -166,8 +186,8 @@ function BrowsePage() {
           options.sort = selectedOrder === 'title' ? 'asc' : 'desc'
         }
 
-        if (selectedGenre > 0) {
-          options.genres = [selectedGenre]
+        if (selectedGenres.length > 0) {
+          options.genres = selectedGenres
         }
 
         if (selectedStatus) {
@@ -178,14 +198,35 @@ function BrowsePage() {
           options.minScore = selectedScore
         }
 
-        const results = await searchManga(searchQuery, options)
-        setSearchResults(results)
+        const res = await searchManga(searchQuery, options)
+
+        if (append) {
+          setSearchResults(prev => [...prev, ...res.data])
+        } else {
+          setSearchResults(res.data)
+        }
+
+        setSearchHasNextPage(res.pagination.has_next_page)
       } catch (error) {
         console.error('Search failed:', error)
       } finally {
         setIsSearching(false)
       }
     }, 100)
+  }
+
+  const loadMoreSearch = () => {
+    const nextPage = searchPage + 1
+    setSearchPage(nextPage)
+    doSearch(nextPage, true)
+  }
+
+  const handleCategoryClick = (row: CarouselRow) => {
+    if (row.path) {
+      navigate(row.path)
+    } else if (row.genreId) {
+      navigate(`/discovery/genre/${row.genreId}?name=${encodeURIComponent(row.title.replace('🏷️ ', ''))}`)
+    }
   }
 
   const handleMangaClick = (manga: MangaCard) => {
@@ -226,7 +267,28 @@ function BrowsePage() {
 
   const renderCarousel = (row: CarouselRow, index: number) => (
     <div key={index} style={{ marginBottom: 'var(--space-12)' }}>
-      <h2 className="carousel-row-title">{row.title}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 'var(--space-2)' }}>
+        <h2 className="carousel-row-title" style={{ margin: 0 }}>{row.title}</h2>
+        <button
+          className="btn"
+          style={{
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 8px'
+          }}
+          onClick={() => handleCategoryClick(row)}
+        >
+          View All
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
       <div className="carousel-row">
         {row.loading ? (
           // Skeleton loaders
@@ -336,44 +398,88 @@ function BrowsePage() {
           {/* Quick Filter Pills (hidden during heavy search for focus) */}
           {(!searchQuery.trim() || filtersApplied) && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '800px', marginTop: '16px' }}>
-              {genres.slice(1, 9).map(g => (
-                <button
-                  key={g.id}
-                  onClick={() => {
-                    setSelectedGenre(selectedGenre === g.id ? 0 : g.id)
-                    setTimeout(() => doSearch(), 50)
-                  }}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '50px',
-                    backgroundColor: selectedGenre === g.id ? 'var(--error)' : 'rgba(255,255,255,0.1)',
-                    color: selectedGenre === g.id ? 'white' : 'var(--text-secondary)',
-                    border: `1px solid ${selectedGenre === g.id ? 'var(--error)' : 'rgba(255,255,255,0.1)'}`,
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    fontSize: '13px',
-                    backdropFilter: 'blur(5px)'
-                  }}
-                >
-                  {g.name}
-                </button>
-              ))}
+              {[
+                { id: 1, name: 'Action' },
+                { id: 2, name: 'Adventure' },
+                { id: 4, name: 'Comedy' },
+                { id: 8, name: 'Drama' },
+                { id: 10, name: 'Fantasy' },
+                { id: 14, name: 'Horror' },
+                { id: 22, name: 'Romance' },
+                { id: 24, name: 'Sci-Fi' },
+                { id: 62, name: 'Isekai' }
+              ].map(g => {
+                const isSelected = selectedGenres.includes(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => toggleGenre(g.id)}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '50px',
+                      backgroundColor: isSelected ? 'var(--error)' : 'rgba(255,255,255,0.1)',
+                      color: isSelected ? 'white' : 'var(--text-secondary)',
+                      border: `1px solid ${isSelected ? 'var(--error)' : 'rgba(255,255,255,0.1)'}`,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      transition: 'all 0.2s',
+                      fontSize: '13px',
+                      backdropFilter: 'blur(5px)'
+                    }}
+                  >
+                    {isSelected && <span style={{ marginRight: '4px' }}>✓</span>}
+                    {g.name}
+                  </button>
+                )
+              })}
             </div>
           )}
 
           {/* Advanced Filters Panel */}
           {showFilters && (
-            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.6)', borderRadius: '12px', display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
-              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setTimeout(() => doSearch(), 50) }}>
-                {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
-              </select>
-              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedScore} onChange={(e) => { setSelectedScore(Number(e.target.value)); setTimeout(() => doSearch(), 50) }}>
-                {SCORE_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
-              </select>
-              <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedOrder} onChange={(e) => { setSelectedOrder(e.target.value); setTimeout(() => doSearch(), 50) }}>
-                {ORDER_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ color: 'black' }}>{o.name}</option>)}
-              </select>
+            <div style={{ marginTop: '16px', padding: '24px', background: 'rgba(0,0,0,0.6)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '900px', backdropFilter: 'blur(10px)' }}>
+
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedStatus} onChange={(e) => { setSelectedStatus(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                  {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
+                </select>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedScore} onChange={(e) => { setSelectedScore(Number(e.target.value)); setTimeout(() => doSearch(), 50) }}>
+                  {SCORE_OPTIONS.map(s => <option key={s.value} value={s.value} style={{ color: 'black' }}>{s.name}</option>)}
+                </select>
+                <select style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', outline: 'none' }} value={selectedOrder} onChange={(e) => { setSelectedOrder(e.target.value); setTimeout(() => doSearch(), 50) }}>
+                  {ORDER_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ color: 'black' }}>{o.name}</option>)}
+                </select>
+              </div>
+
+              {/* Master Genre Selector */}
+              <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>All Genres</h4>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {genres.filter(g => g.id !== 0).map(g => {
+                    const isSelected = selectedGenres.includes(g.id);
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => toggleGenre(g.id)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          backgroundColor: isSelected ? 'var(--error)' : 'rgba(255,255,255,0.05)',
+                          color: isSelected ? 'white' : 'var(--text-tertiary)',
+                          border: `1px solid ${isSelected ? 'var(--error)' : 'transparent'}`,
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          transition: 'all 0.1s'
+                        }}
+                      >
+                        {g.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
             </div>
           )}
         </div>
@@ -484,6 +590,29 @@ function BrowsePage() {
                 </div>
               ) : null}
             </div>
+            {searchHasNextPage && !isSearching && (
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={loadMoreSearch}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    padding: '12px 32px',
+                    borderRadius: '50px',
+                    fontSize: '16px',
+                    fontWeight: 600
+                  }}
+                >
+                  Load More
+                </button>
+              </div>
+            )}
+            {searchHasNextPage && isSearching && (
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                <div className="spinner small" />
+              </div>
+            )}
           </div>
         ) : (
           <div>
