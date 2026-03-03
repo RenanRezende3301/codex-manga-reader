@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { searchManga, getTopManga, getPublishingManga, getMangaByGenre, getGenres, SearchOptions } from '../api/jikan'
+import Pagination from '../components/common/Pagination'
 import './BrowsePage.css'
 
 interface MangaCard {
@@ -54,7 +55,7 @@ function BrowsePage() {
   const [showFilters, setShowFilters] = useState(false)
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([{ id: 0, name: 'All' }])
   const [searchPage, setSearchPage] = useState(1)
-  const [searchHasNextPage, setSearchHasNextPage] = useState(false)
+  const [searchTotalPages, setSearchTotalPages] = useState(1)
   const [genreSearchInput, setGenreSearchInput] = useState('')
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
@@ -84,6 +85,7 @@ function BrowsePage() {
         setSearchQuery(saved.searchQuery)
         setHasSearched(saved.hasSearched)
         setSearchPage(saved.searchPage)
+        setSearchTotalPages(saved.searchTotalPages || 1)
         setSearchResults(saved.searchResults)
         setSelectedGenres(saved.selectedGenres)
         setSelectedStatus(saved.selectedStatus)
@@ -174,7 +176,7 @@ function BrowsePage() {
       setHasSearched(false)
       setSearchResults([])
       setSearchPage(1)
-      setSearchHasNextPage(false)
+      setSearchTotalPages(1)
     }
   }
 
@@ -193,7 +195,7 @@ function BrowsePage() {
     })
   }
 
-  const doSearch = (page = 1, append = false) => {
+  const doSearch = (page = 1) => {
     const hasFilters = selectedGenres.length > 0 || selectedStatus !== '' || selectedScore > 0
 
     if (!searchQuery.trim() && !hasFilters) {
@@ -201,12 +203,12 @@ function BrowsePage() {
       setIsSearching(false)
       setFiltersApplied(false)
       setSearchPage(1)
-      setSearchHasNextPage(false)
+      setSearchTotalPages(1)
       return
     }
 
     setIsSearching(true)
-    if (!append) {
+    if (page === 1) {
       setFiltersApplied(true) // Show results section immediately when search starts
       setSearchPage(1)
     }
@@ -242,13 +244,8 @@ function BrowsePage() {
 
         const res = await searchManga(searchQuery, options)
 
-        if (append) {
-          setSearchResults(prev => [...prev, ...res.data])
-        } else {
-          setSearchResults(res.data)
-        }
-
-        setSearchHasNextPage(res.pagination.has_next_page)
+        setSearchResults(res.data)
+        setSearchTotalPages(res.pagination.last_visible_page || 1)
       } catch (error) {
         console.error('Search failed:', error)
       } finally {
@@ -257,10 +254,10 @@ function BrowsePage() {
     }, 100)
   }
 
-  const loadMoreSearch = () => {
-    const nextPage = searchPage + 1
-    setSearchPage(nextPage)
-    doSearch(nextPage, true)
+  const handlePageChange = (newPage: number) => {
+    setSearchPage(newPage)
+    doSearch(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const preserveState = () => {
@@ -268,6 +265,7 @@ function BrowsePage() {
       searchQuery,
       hasSearched,
       searchPage,
+      searchTotalPages,
       searchResults,
       selectedGenres,
       selectedStatus,
@@ -747,25 +745,17 @@ function BrowsePage() {
                 </div>
               ) : null}
             </div>
-            {searchHasNextPage && !isSearching && (
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={loadMoreSearch}
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    padding: '12px 32px',
-                    borderRadius: '50px',
-                    fontSize: '16px',
-                    fontWeight: 600
-                  }}
-                >
-                  Load More
-                </button>
-              </div>
+
+            {!isSearching && searchTotalPages > 1 && (
+              <Pagination
+                currentPage={searchPage}
+                totalPages={searchTotalPages}
+                onPageChange={handlePageChange}
+                disabled={isSearching}
+              />
             )}
-            {searchHasNextPage && isSearching && (
+
+            {isSearching && (
               <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                 <div className="spinner small" />
               </div>

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getMangaByGenre, getTopManga, getPublishingManga, searchManga } from '../api/jikan';
+import Pagination from '../components/common/Pagination';
 import './CategoryPage.css';
 
 interface MangaCard {
@@ -19,9 +20,8 @@ export default function CategoryPage() {
 
   const [mangas, setMangas] = useState<MangaCard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
   const title = searchParams.get('name') || (type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Category');
 
   const fetchMangas = useCallback(async (pageNum: number) => {
@@ -40,13 +40,12 @@ export default function CategoryPage() {
         res = await searchManga('', { limit: 25, page: pageNum });
       }
 
-      setMangas(prev => pageNum === 1 ? res.data : [...prev, ...res.data]);
-      setHasNextPage(res.pagination.has_next_page);
+      setMangas(res.data);
+      setTotalPages(res.pagination.last_visible_page || 1);
     } catch (error) {
       console.error('Failed to fetch category data:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, [type, id]);
 
@@ -59,7 +58,7 @@ export default function CategoryPage() {
         const saved = JSON.parse(savedStr)
         setMangas(saved.mangas)
         setPage(saved.page)
-        setHasNextPage(saved.hasNextPage)
+        setTotalPages(saved.totalPages || 1)
 
         sessionStorage.removeItem(CACHE_KEY)
         setLoading(false)
@@ -79,23 +78,11 @@ export default function CategoryPage() {
     fetchMangas(1);
   }, [fetchMangas, CACHE_KEY]);
 
-  // Intersection Observer for Infinite Scrolling
-  const observerRef = useRef<IntersectionObserver>();
-  const lastElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading || loadingMore) return;
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasNextPage) {
-        setLoadingMore(true);
-        const next = page + 1;
-        setPage(next);
-        fetchMangas(next);
-      }
-    }, { rootMargin: '400px' });
-
-    if (node) observerRef.current.observe(node);
-  }, [loading, loadingMore, hasNextPage, page, fetchMangas]);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchMangas(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="page" style={{ padding: '0 var(--space-8)' }}>
@@ -131,17 +118,15 @@ export default function CategoryPage() {
       ) : (
         <div className="manga-grid">
           {mangas.map((manga, index) => {
-            const isLast = index === mangas.length - 1;
             return (
               <div
                 key={`${manga.malId}-${index}`}
-                ref={isLast ? lastElementRef : null}
                 className="manga-card"
                 onClick={() => {
                   sessionStorage.setItem(CACHE_KEY, JSON.stringify({
                     mangas,
                     page,
-                    hasNextPage,
+                    totalPages,
                     scrollY: window.scrollY
                   }))
                   navigate(`/manga/mal/${manga.malId}`)
@@ -173,10 +158,13 @@ export default function CategoryPage() {
         </div>
       )}
 
-      {loadingMore && (
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0 80px' }}>
-          <div className="spinner small" />
-        </div>
+      {!loading && totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          disabled={loading}
+        />
       )}
     </div>
   );
