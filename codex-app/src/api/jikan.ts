@@ -136,19 +136,24 @@ async function apiRequest(endpoint: string): Promise<any> {
  * Normalize Jikan manga data
  */
 function normalizeManga(jikanManga: any) {
+  const allTags = [
+    ...(jikanManga.genres?.map((g: any) => g.name) || []),
+    ...(jikanManga.themes?.map((t: any) => t.name) || []),
+    ...(jikanManga.demographics?.map((d: any) => d.name) || [])
+  ];
+
   return {
     malId: jikanManga.mal_id,
     title: jikanManga.title,
-    titleEnglish: jikanManga.title_english || jikanManga.title,
+    titleEnglish: jikanManga.title_english,
     titleJapanese: jikanManga.title_japanese,
-    coverUrl: jikanManga.images?.jpg?.large_image_url ||
-      jikanManga.images?.jpg?.image_url,
-    synopsis: jikanManga.synopsis || 'No synopsis available.',
-    score: jikanManga.score || 0,
-    scoredBy: jikanManga.scored_by || 0,
+    coverUrl: jikanManga.images?.webp?.large_image_url || jikanManga.images?.jpg?.large_image_url,
+    synopsis: jikanManga.synopsis,
+    score: jikanManga.score,
+    scoredBy: jikanManga.scored_by,
     rank: jikanManga.rank,
     popularity: jikanManga.popularity,
-    genres: jikanManga.genres?.map((g: any) => g.name) || [],
+    genres: Array.from(new Set(allTags)), // Deduplicate combined tags
     themes: jikanManga.themes?.map((t: any) => t.name) || [],
     demographics: jikanManga.demographics?.map((d: any) => d.name) || [],
     status: jikanManga.status || 'Unknown',
