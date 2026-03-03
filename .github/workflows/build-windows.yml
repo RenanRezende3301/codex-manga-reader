@@ -1,0 +1,37 @@
+name: Build Windows App
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: codex-app/package-lock.json
+
+      - name: Install Dependencies
+        run: |
+          cd codex-app
+          npm install
+
+      - name: Build Windows Executable
+        run: |
+          cd codex-app
+          npm run build:win
+
+      - name: Upload Windows Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: CODEX-Windows-Build
+          path: codex-app/release/*.exe
