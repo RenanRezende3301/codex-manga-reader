@@ -50,11 +50,34 @@ export default function CategoryPage() {
     }
   }, [type, id]);
 
+  const CACHE_KEY = `codex-category-${type}-${id || 'all'}`
+
   useEffect(() => {
+    const savedStr = sessionStorage.getItem(CACHE_KEY)
+    if (savedStr) {
+      try {
+        const saved = JSON.parse(savedStr)
+        setMangas(saved.mangas)
+        setPage(saved.page)
+        setHasNextPage(saved.hasNextPage)
+
+        sessionStorage.removeItem(CACHE_KEY)
+        setLoading(false)
+
+        setTimeout(() => {
+          window.scrollTo(0, saved.scrollY || 0)
+        }, 100)
+        return
+      } catch (e) {
+        console.error('Failed to parse cached category state', e)
+        sessionStorage.removeItem(CACHE_KEY)
+      }
+    }
+
     setLoading(true);
     setPage(1);
     fetchMangas(1);
-  }, [fetchMangas]);
+  }, [fetchMangas, CACHE_KEY]);
 
   // Intersection Observer for Infinite Scrolling
   const observerRef = useRef<IntersectionObserver>();
@@ -114,7 +137,15 @@ export default function CategoryPage() {
                 key={`${manga.malId}-${index}`}
                 ref={isLast ? lastElementRef : null}
                 className="manga-card"
-                onClick={() => navigate(`/manga/mal/${manga.malId}`)}
+                onClick={() => {
+                  sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                    mangas,
+                    page,
+                    hasNextPage,
+                    scrollY: window.scrollY
+                  }))
+                  navigate(`/manga/mal/${manga.malId}`)
+                }}
               >
                 <img
                   src={manga.coverUrl}

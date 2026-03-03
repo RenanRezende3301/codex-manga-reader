@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { searchManga, getTopManga, getPublishingManga, getMangaByGenre, getGenres, SearchOptions } from '../api/jikan'
 import './BrowsePage.css'
 
@@ -47,7 +47,7 @@ const SCORE_OPTIONS = [
 
 function BrowsePage() {
   const navigate = useNavigate()
-  const location = useLocation()
+  const CACHE_KEY = 'codex-browse-state'
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<MangaCard[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -77,30 +77,35 @@ function BrowsePage() {
   ])
 
   useEffect(() => {
-    // Check if we are returning from a manga page with preserved state
-    if (location.state && location.state.browseState) {
-      const saved = location.state.browseState
-      setSearchQuery(saved.searchQuery)
-      setHasSearched(saved.hasSearched)
-      setSearchPage(saved.searchPage)
-      setSearchResults(saved.searchResults)
-      setSelectedGenres(saved.selectedGenres)
-      setSelectedStatus(saved.selectedStatus)
-      setSelectedOrder(saved.selectedOrder)
-      setSelectedScore(saved.selectedScore)
-      setFiltersApplied(saved.filtersApplied)
+    const savedStateStr = sessionStorage.getItem(CACHE_KEY)
+    if (savedStateStr) {
+      try {
+        const saved = JSON.parse(savedStateStr)
+        setSearchQuery(saved.searchQuery)
+        setHasSearched(saved.hasSearched)
+        setSearchPage(saved.searchPage)
+        setSearchResults(saved.searchResults)
+        setSelectedGenres(saved.selectedGenres)
+        setSelectedStatus(saved.selectedStatus)
+        setSelectedOrder(saved.selectedOrder)
+        setSelectedScore(saved.selectedScore)
+        setFiltersApplied(saved.filtersApplied)
 
-      // We still need genres loaded for the filter pills to show names properly
-      getGenres().then(fetchedGenres => {
-        setGenres([{ id: 0, name: 'All' }, ...fetchedGenres])
+        sessionStorage.removeItem(CACHE_KEY)
 
-        // Restore scroll position after a tiny delay for React to paint
-        setTimeout(() => {
-          window.scrollTo(0, saved.scrollY || 0)
-        }, 100)
-      })
+        getGenres().then(fetchedGenres => {
+          setGenres([{ id: 0, name: 'All' }, ...fetchedGenres])
 
-      return // Skip standard initialization if we restored state
+          setTimeout(() => {
+            window.scrollTo(0, saved.scrollY || 0)
+          }, 100)
+        })
+
+        return
+      } catch (err) {
+        console.error('Failed to parse cached browse state', err)
+        sessionStorage.removeItem(CACHE_KEY)
+      }
     }
 
     initializePage()
@@ -259,7 +264,7 @@ function BrowsePage() {
   }
 
   const preserveState = () => {
-    return {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
       searchQuery,
       hasSearched,
       searchPage,
@@ -270,20 +275,22 @@ function BrowsePage() {
       selectedScore,
       filtersApplied,
       scrollY: window.scrollY
-    }
+    }))
   }
 
   const handleCategoryClick = (row: CarouselRow) => {
+    preserveState()
     if (row.path) {
-      navigate(row.path, { state: { browseState: preserveState() } })
+      navigate(row.path)
     } else if (row.genreId) {
-      navigate(`/discovery/genre/${row.genreId}?name=${encodeURIComponent(row.title.replace('🏷️ ', ''))}`, { state: { browseState: preserveState() } })
+      navigate(`/discovery/genre/${row.genreId}?name=${encodeURIComponent(row.title.replace('🏷️ ', ''))}`)
     }
   }
 
   const handleMangaClick = (manga: MangaCard) => {
-    // Navigate to manga details page with MAL ID and preserve current catalog state
-    navigate(`/manga/mal/${manga.malId}`, { state: { browseState: preserveState() } })
+    preserveState()
+    // Navigate to manga details page with MAL ID
+    navigate(`/manga/mal/${manga.malId}`)
   }
 
 
