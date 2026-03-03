@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { searchManga, getTopManga, getPublishingManga, getMangaByGenre, getGenres, SearchOptions } from '../api/jikan'
 import './BrowsePage.css'
 
@@ -47,6 +47,7 @@ const SCORE_OPTIONS = [
 
 function BrowsePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<MangaCard[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -56,6 +57,7 @@ function BrowsePage() {
   const [searchHasNextPage, setSearchHasNextPage] = useState(false)
   const [genreSearchInput, setGenreSearchInput] = useState('')
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
   // Hero Carousel State
   const [heroMangas, setHeroMangas] = useState<MangaCard[]>([])
@@ -75,6 +77,32 @@ function BrowsePage() {
   ])
 
   useEffect(() => {
+    // Check if we are returning from a manga page with preserved state
+    if (location.state && location.state.browseState) {
+      const saved = location.state.browseState
+      setSearchQuery(saved.searchQuery)
+      setHasSearched(saved.hasSearched)
+      setSearchPage(saved.searchPage)
+      setSearchResults(saved.searchResults)
+      setSelectedGenres(saved.selectedGenres)
+      setSelectedStatus(saved.selectedStatus)
+      setSelectedOrder(saved.selectedOrder)
+      setSelectedScore(saved.selectedScore)
+      setFiltersApplied(saved.filtersApplied)
+
+      // We still need genres loaded for the filter pills to show names properly
+      getGenres().then(fetchedGenres => {
+        setGenres([{ id: 0, name: 'All' }, ...fetchedGenres])
+
+        // Restore scroll position after a tiny delay for React to paint
+        setTimeout(() => {
+          window.scrollTo(0, saved.scrollY || 0)
+        }, 100)
+      })
+
+      return // Skip standard initialization if we restored state
+    }
+
     initializePage()
   }, [])
 
@@ -137,6 +165,12 @@ function BrowsePage() {
 
   const handleSearchInput = (query: string) => {
     setSearchQuery(query)
+    if (!query.trim()) {
+      setHasSearched(false)
+      setSearchResults([])
+      setSearchPage(1)
+      setSearchHasNextPage(false)
+    }
   }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -175,6 +209,8 @@ function BrowsePage() {
     // Small delay to show loading state
     setTimeout(async () => {
       try {
+        setIsSearching(true)
+        setHasSearched(true)
         const options: SearchOptions = {
           limit: 25,
           page: page
@@ -222,17 +258,32 @@ function BrowsePage() {
     doSearch(nextPage, true)
   }
 
+  const preserveState = () => {
+    return {
+      searchQuery,
+      hasSearched,
+      searchPage,
+      searchResults,
+      selectedGenres,
+      selectedStatus,
+      selectedOrder,
+      selectedScore,
+      filtersApplied,
+      scrollY: window.scrollY
+    }
+  }
+
   const handleCategoryClick = (row: CarouselRow) => {
     if (row.path) {
-      navigate(row.path)
+      navigate(row.path, { state: { browseState: preserveState() } })
     } else if (row.genreId) {
-      navigate(`/discovery/genre/${row.genreId}?name=${encodeURIComponent(row.title.replace('🏷️ ', ''))}`)
+      navigate(`/discovery/genre/${row.genreId}?name=${encodeURIComponent(row.title.replace('🏷️ ', ''))}`, { state: { browseState: preserveState() } })
     }
   }
 
   const handleMangaClick = (manga: MangaCard) => {
-    // Navigate to manga details page with MAL ID
-    navigate(`/manga/mal/${manga.malId}`)
+    // Navigate to manga details page with MAL ID and preserve current catalog state
+    navigate(`/manga/mal/${manga.malId}`, { state: { browseState: preserveState() } })
   }
 
 
