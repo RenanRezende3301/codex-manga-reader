@@ -297,11 +297,7 @@ export async function getPublishingManga(limit = 25, page = 1): Promise<Paginate
  * Get manga genres
  */
 export async function getGenres() {
-  const params = new URLSearchParams({
-    filter: 'genres',
-  });
-
-  const data = await apiRequest(`/genres/manga?${params}`);
+  const data = await apiRequest('/genres/manga');
   // Return early if array is empty or malformed
   if (!data?.data || !Array.isArray(data.data)) return [];
 
