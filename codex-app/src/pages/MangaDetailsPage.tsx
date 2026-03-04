@@ -8,6 +8,7 @@ interface MangaDetails {
   title: string
   titleEnglish?: string
   titleJapanese?: string
+  titleSynonyms?: string[]
   coverUrl: string
   synopsis: string
   score: number
@@ -40,6 +41,31 @@ interface ChapterInfo {
   url: string
   date?: string
   read?: boolean
+}
+
+// Generate an intelligent list of search terms from Jikan metadata
+function generateSearchQueries(title: string, en?: string, ja?: string, syn: string[] = []): string[] {
+  // Helper to get first N words
+  const getFirstWords = (str: string, count: number) => str.split(' ').slice(0, count).join(' ').trim()
+
+  const rawTerms: (string | undefined)[] = [
+    en, title, ja, ...syn,
+    // The "Matadora" RegEx: strip subtitles (everything after a colon, dash, comma, or parenthesis)
+    en?.split(/[:\-,\(]/)[0].trim(),
+    title.split(/[:\-,\(]/)[0].trim(),
+  ]
+
+  // The "Gatilho Curto": Sites like MangaLivre often remove colons but keep the massive 15-word sentence.
+  // We grab just the first 2, 3, and 4 words of the English and Main title as last-resort fallbacks.
+  if (en && en.split(' ').length > 3) {
+    rawTerms.push(getFirstWords(en, 2), getFirstWords(en, 3), getFirstWords(en, 4))
+  }
+  if (title.split(' ').length > 3) {
+    rawTerms.push(getFirstWords(title, 2), getFirstWords(title, 3), getFirstWords(title, 4))
+  }
+
+  // Filter out nulls, empty strings, strings that are too short to be meaningful, and deduplicate
+  return Array.from(new Set(rawTerms)).filter((t): t is string => typeof t === 'string' && t.length >= 4)
 }
 
 function MangaDetailsPage() {
@@ -263,8 +289,23 @@ function MangaDetailsPage() {
       for (const source of otherSources) {
         try {
           if (window.codex && mangaData.title) {
-            const results = await window.codex.fetchMangaSearch(source.id, mangaData.title)
-            if (results && results.length > 0) {
+            const searchTerms = generateSearchQueries(mangaData.title)
+
+            let results: any[] = []
+            let successTerm = ''
+
+            // Loop through the intelligent cascade of names
+            for (const term of searchTerms) {
+              const res = await window.codex.fetchMangaSearch(source.id, term)
+              if (res && res.length > 0) {
+                results = res
+                successTerm = term
+                break
+              }
+            }
+
+            if (results.length > 0) {
+              console.log(`[Sources] Found match in ${source.name} using term "${successTerm}":`, results[0].title, results[0].url)
               const otherChapters = await window.codex.fetchChapterList(source.id, results[0].url)
               setSources(prev => prev.map(s =>
                 s.id === source.id ? {
@@ -309,7 +350,7 @@ function MangaDetailsPage() {
       setManga(mangaData)
 
       // After loading manga, search for it in sources
-      searchInSources(mangaData.title, mangaData.titleEnglish)
+      searchInSources(mangaData)
     } catch (err) {
       console.error('Failed to load manga:', err)
       setError('Failed to load manga information')
@@ -318,7 +359,15 @@ function MangaDetailsPage() {
     }
   }
 
-  const searchInSources = async (title: string, titleEn?: string) => {
+  const searchInSources = async (mangaData: MangaDetails) => {
+    // Generate intelligent search terms: primary, EN, JP, synonyms, and regex-stripped Subtitles
+    const searchTerms = generateSearchQueries(
+      mangaData.title,
+      mangaData.titleEnglish,
+      mangaData.titleJapanese,
+      mangaData.titleSynonyms || []
+    )
+
     // Initialize sources state with loading state for all available sources
     setSources(availableSources.map(s => ({
       id: s.id,
@@ -333,14 +382,23 @@ function MangaDetailsPage() {
       try {
         // Check if we're in Electron with the IPC functions available
         if (window.codex && typeof window.codex.fetchMangaSearch === 'function') {
-          // Use IPC to search in source
-          const searchTerm = titleEn || title
-          const results = await window.codex.fetchMangaSearch(source.id, searchTerm)
+          // Use IPC to search in source using the new cascade loop
+          let results: any[] = []
+          let successTerm = ''
 
-          if (results && results.length > 0) {
+          for (const term of searchTerms) {
+            const res = await window.codex.fetchMangaSearch(source.id, term)
+            if (res && res.length > 0) {
+              results = res
+              successTerm = term
+              break
+            }
+          }
+
+          if (results.length > 0) {
             // Find best match (first result for now)
             const bestMatch = results[0]
-            console.log(`[Sources] Found match in ${source.name}:`, bestMatch.title, bestMatch.url)
+            console.log(`[Sources] Found match in ${source.name} using term "${successTerm}":`, bestMatch.title, bestMatch.url)
 
             // Fetch chapters for this manga using the correct IPC method
             const chapters = await window.codex.fetchChapterList(source.id, bestMatch.url)
