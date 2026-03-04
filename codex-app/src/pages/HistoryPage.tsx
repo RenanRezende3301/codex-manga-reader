@@ -4,13 +4,17 @@ import './HistoryPage.css'
 
 interface HistoryItem {
   id: number
-  mangaId: number
+  mangaId: number | null
+  malId?: number | null
   mangaTitle: string
   thumbnailUrl?: string
-  chapterId: number
+  chapterId: string | number
   chapterName: string
   chapterNumber: number
   dateRead: number
+  sourceUrl: string
+  chapterUrl: string
+  sourceId: string
 }
 
 function HistoryPage() {
@@ -25,21 +29,30 @@ function HistoryPage() {
   const loadHistory = async () => {
     setIsLoading(true)
     try {
-      if (window.codex) {
-        const data = await window.codex.getReadingHistory(100)
-        setHistory(data)
+      const historyStr = localStorage.getItem('codex_reading_history')
+      if (historyStr) {
+        const metaList = JSON.parse(historyStr)
+        const mappedHistory = metaList.map((item: any, i: number) => ({
+          id: i,
+          mangaId: item.mangaId || null,
+          malId: item.malId || null,
+          mangaTitle: item.mangaTitle || 'Unknown',
+          thumbnailUrl: item.thumbnailUrl,
+          chapterId: item.chapterId,
+          chapterName: item.chapterName || 'Chapter',
+          chapterNumber: item.chapterNumber || 0,
+          dateRead: item.timestamp || Date.now(),
+          sourceUrl: item.sourceUrl,
+          chapterUrl: item.chapterUrl,
+          sourceId: item.sourceId || 'jikan'
+        }))
+        setHistory(mappedHistory)
       } else {
-        // Mock data for browser testing
-        const now = Date.now()
-        setHistory([
-          { id: 1, mangaId: 1, mangaTitle: 'One Piece', thumbnailUrl: 'https://via.placeholder.com/80x120/1a1a24/8b5cf6?text=OP', chapterId: 1, chapterName: 'Chapter 1120', chapterNumber: 1120, dateRead: now - 3600000 },
-          { id: 2, mangaId: 1, mangaTitle: 'One Piece', thumbnailUrl: 'https://via.placeholder.com/80x120/1a1a24/8b5cf6?text=OP', chapterId: 2, chapterName: 'Chapter 1119', chapterNumber: 1119, dateRead: now - 7200000 },
-          { id: 3, mangaId: 2, mangaTitle: 'Naruto', thumbnailUrl: 'https://via.placeholder.com/80x120/1a1a24/8b5cf6?text=N', chapterId: 3, chapterName: 'Chapter 700', chapterNumber: 700, dateRead: now - 86400000 },
-          { id: 4, mangaId: 3, mangaTitle: 'Dragon Ball', thumbnailUrl: 'https://via.placeholder.com/80x120/1a1a24/8b5cf6?text=DB', chapterId: 4, chapterName: 'Chapter 519', chapterNumber: 519, dateRead: now - 172800000 },
-        ])
+        setHistory([])
       }
     } catch (error) {
-      console.error('Failed to load history:', error)
+      console.error('Failed to load local history:', error)
+      setHistory([])
     } finally {
       setIsLoading(false)
     }
@@ -47,16 +60,14 @@ function HistoryPage() {
 
   const handleClearHistory = async () => {
     if (confirm('Are you sure you want to clear all reading history?')) {
-      if (window.codex) {
-        await window.codex.clearHistory()
-      }
+      localStorage.removeItem('codex_reading_history')
       setHistory([])
     }
   }
 
   const handleItemClick = (item: HistoryItem) => {
-    // Navigate to reader with the chapter
-    navigate(`/reader/local/${item.chapterId}`)
+    // Navigate to reader with the specific source and URL
+    navigate(`/reader/${item.sourceId}/${encodeURIComponent(item.chapterUrl)}`)
   }
 
   const formatDate = (timestamp: number) => {

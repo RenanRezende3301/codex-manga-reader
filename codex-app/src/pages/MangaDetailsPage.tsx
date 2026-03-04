@@ -644,6 +644,19 @@ function MangaDetailsPage() {
       }
     }
 
+    // Save manga details for the History feature bypass
+    const historyMeta = {
+      malId: malId || null,
+      mangaTitle: manga?.title || 'Unknown Manga',
+      thumbnailUrl: manga?.coverUrl || 'https://via.placeholder.com/80x120/1a1a24/8b5cf6?text=?',
+      chapterId: chapter.url,
+      chapterName: chapter.name || 'Chapter',
+      sourceUrl: sourceInfo?.mangaUrl || '',
+      chapterUrl: chapter.url,
+      timestamp: Date.now()
+    }
+    localStorage.setItem('codex_current_manga_meta', JSON.stringify(historyMeta))
+
     const readerUrl = `/reader/${selectedSource}/${encodeURIComponent(chapter.url)}`
     console.log('[Details] Navigating to:', readerUrl)
     navigate(readerUrl)

@@ -473,6 +473,48 @@ function ReaderPage() {
         setCurrentChapterIndex(currentIndex)
         console.log(`[Reader] Chapter list loaded: ${mappedChapters.length} chapters, current: ${currentIndex}`)
 
+        // --- History Manager Sync ---
+        try {
+          const metaStr = localStorage.getItem('codex_current_manga_meta')
+          if (metaStr && currentIndex >= 0) {
+            const meta = JSON.parse(metaStr)
+            const currentChapterInfo = mappedChapters[currentIndex]
+
+            // Update the metadata with the exact chapter being viewed
+            const updatedMeta = {
+              ...meta,
+              chapterName: currentChapterInfo.name,
+              chapterUrl: currentChapterInfo.url,
+              sourceId: sourceId || 'mal_catalog',
+              timestamp: Date.now()
+            }
+
+            // Save it back to meta for next chapter navigation
+            localStorage.setItem('codex_current_manga_meta', JSON.stringify(updatedMeta))
+
+            // Add to the custom Reading History array
+            const historyStr = localStorage.getItem('codex_reading_history')
+            let historyQueue: any[] = historyStr ? JSON.parse(historyStr) : []
+
+            // Remove previous instances of this same manga to avoid duplicates
+            historyQueue = historyQueue.filter((h: any) => h.sourceUrl !== updatedMeta.sourceUrl && h.mangaTitle !== updatedMeta.mangaTitle)
+
+            // Add to the front of the queue
+            historyQueue.unshift(updatedMeta)
+
+            // Keep strictly top 15
+            if (historyQueue.length > 15) {
+              historyQueue = historyQueue.slice(0, 15)
+            }
+
+            localStorage.setItem('codex_reading_history', JSON.stringify(historyQueue))
+            console.log('[Reader] Pushed to custom reading history:', updatedMeta.mangaTitle)
+          }
+        } catch (historyErr) {
+          console.warn('[Reader] Failed to push local history queue', historyErr)
+        }
+        // -----------------------------
+
         // Fetch malId explicitly from local DB mapping or localStorage fallback
         const malIdStr = localStorage.getItem(`codex_mal_id_${sourceId}_${encodeURIComponent(srcMangaUrl)}`)
         let foundMalId = malIdStr ? parseInt(malIdStr) : null
