@@ -730,11 +730,45 @@ function BrowsePage() {
 
       {/* Search Results or Carousels */}
       <div className="page-content" style={{ marginTop: 0 }}>
-        {filtersApplied || searchQuery.trim() ? (
+        {filtersApplied || hasSearched ? (
           <div style={{ padding: '0 var(--space-10)' }}>
-            <h2 className="carousel-row-title" style={{ marginBottom: 'var(--space-6)' }}>
-              {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Filtered Results'}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: 'var(--space-6)' }}>
+              <button
+                className="btn"
+                onClick={() => {
+                  setSearchQuery('');
+                  setHasSearched(false);
+                  setFiltersApplied(false);
+                  setSelectedGenres([]);
+                  setSelectedStatus('');
+                  setSelectedScore(0);
+                  setSearchResults([]);
+                  setSearchPage(1);
+                  setSearchTotalPages(1);
+                }}
+                style={{
+                  background: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '50%',
+                  width: '48px', height: '48px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', cursor: 'pointer',
+                  flexShrink: 0,
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
+                title="Back to Discover"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <h2 className="carousel-row-title" style={{ margin: 0 }}>
+                {searchQuery.trim() ? `Search Results for "${searchQuery}"` : 'Filtered Results'}
+              </h2>
+            </div>
             <div className="manga-grid">
               {searchResults.length > 0 ? (
                 searchResults.map(renderMangaCard)

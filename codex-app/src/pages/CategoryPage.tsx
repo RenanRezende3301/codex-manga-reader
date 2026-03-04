@@ -91,13 +91,17 @@ export default function CategoryPage() {
         <button
           className="btn"
           style={{
-            background: 'rgba(255,255,255,0.1)',
+            background: 'rgba(0,0,0,0.5)',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '50%',
             width: '48px', height: '48px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', cursor: 'pointer'
+            color: 'white', cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s'
           }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
           onClick={() => navigate(-1)}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
