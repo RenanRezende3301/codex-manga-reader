@@ -45,37 +45,16 @@ interface ChapterInfo {
 
 // Generate an intelligent list of search terms from Jikan metadata
 function generateSearchQueries(title: string, en?: string, ja?: string, syn: string[] = []): string[] {
-  // Helper to get first N words
-  const getFirstWords = (str: string, count: number) => str.split(' ').slice(0, count).join(' ').trim()
-
-  // Helper to isolate the single longest word (best for WordPress backend keyword matching)
-  const getLongestWord = (str: string) => {
-    const words = str.split(' ').map(w => w.replace(/[^a-zA-Z]/g, ''))
-    return words.reduce((longest, current) => current.length > longest.length ? current : longest, '')
-  }
-
-  const rawTerms: (string | undefined)[] = [
+  // Try main titles first, then synonyms
+  const rawTerms = [
     en, title, ja, ...syn,
     // The "Matadora" RegEx: strip subtitles (everything after a colon, dash, comma, or parenthesis)
     en?.split(/[:\-,\(]/)[0].trim(),
-    title.split(/[:\-,\(]/)[0].trim(),
+    title.split(/[:\-,\(]/)[0].trim()
   ]
 
-  // The "Gatilho Curto": Sites like MangaLivre often remove colons but keep the massive 15-word sentence.
-  // We grab just the first 2, 3, and 4 words of the English and Main title as last-resort fallbacks.
-  if (en && en.split(' ').length > 3) {
-    rawTerms.push(getFirstWords(en, 2), getFirstWords(en, 3), getFirstWords(en, 4))
-    const lw = getLongestWord(en)
-    if (lw.length >= 6) rawTerms.push(lw)
-  }
-  if (title.split(' ').length > 3) {
-    rawTerms.push(getFirstWords(title, 2), getFirstWords(title, 3), getFirstWords(title, 4))
-    const lw = getLongestWord(title)
-    if (lw.length >= 6) rawTerms.push(lw)
-  }
-
   // Filter out nulls, empty strings, strings that are too short to be meaningful, and deduplicate
-  return Array.from(new Set(rawTerms)).filter((t): t is string => typeof t === 'string' && t.length >= 4)
+  return Array.from(new Set(rawTerms)).filter((t): t is string => typeof t === 'string' && t.length >= 3)
 }
 
 function MangaDetailsPage() {

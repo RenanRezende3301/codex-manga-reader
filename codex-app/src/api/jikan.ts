@@ -147,6 +147,7 @@ function normalizeManga(jikanManga: any) {
     title: jikanManga.title,
     titleEnglish: jikanManga.title_english,
     titleJapanese: jikanManga.title_japanese,
+    titleSynonyms: jikanManga.title_synonyms || [],
     coverUrl: jikanManga.images?.webp?.large_image_url || jikanManga.images?.jpg?.large_image_url,
     synopsis: jikanManga.synopsis,
     score: jikanManga.score,
