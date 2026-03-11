@@ -75,7 +75,7 @@ Make sure you have [Node.js](https://nodejs.org/) (v18+) and npm installed.
    ```bash
    npm run electron:build
    ```
-
+ 
 ---
 
 ## 🔌 How to Create Custom Sources
