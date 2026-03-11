@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('codex', {
   updateManga: (mangaId, updates) => ipcRenderer.invoke('db:manga:update', mangaId, updates),
   getManga: (mangaId) => ipcRenderer.invoke('db:manga:getById', mangaId),
   getMangaByUrl: (sourceUrl) => ipcRenderer.invoke('db:manga:getByUrl', sourceUrl),
+  getMangaByMalId: (malId) => ipcRenderer.invoke('db:manga:getByMalId', malId),
   isInLibrary: (sourceUrl) => ipcRenderer.invoke('db:manga:isInLibrary', sourceUrl),
   toggleFavorite: (mangaId) => ipcRenderer.invoke('db:manga:toggleFavorite', mangaId),
   getFavorites: () => ipcRenderer.invoke('db:manga:getFavorites'),

@@ -288,7 +288,7 @@ function BrowsePage() {
   const handleMangaClick = (manga: MangaCard) => {
     preserveState()
     // Navigate to manga details page with MAL ID
-    navigate(`/manga/mal/${manga.malId}`)
+    navigate(`/manga/mal/${manga.malId}`, { state: { mangaData: manga } })
   }
 
 

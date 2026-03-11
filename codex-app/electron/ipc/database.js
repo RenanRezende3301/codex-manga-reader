@@ -41,6 +41,16 @@ function registerDatabaseHandlers() {
     return MangaDAO.isInLibrary(sourceUrl);
   });
 
+  // Get manga by MAL ID
+  ipcMain.handle('db:manga:getByMalId', async (event, malId) => {
+    try {
+      return MangaDAO.getByMalId(malId);
+    } catch (error) {
+      console.error('[DB] Error getting manga by MAL ID:', error);
+      return null;
+    }
+  });
+
   // Get manga by source URL
   ipcMain.handle('db:manga:getByUrl', async (event, sourceUrl) => {
     try {

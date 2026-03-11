@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { getMangaById } from '../api/jikan'
 import './MangaDetailsPage.css'
 
@@ -61,6 +61,10 @@ function MangaDetailsPage() {
   // Handle both route patterns: /manga/mal/:id or /manga/:sourceId/:mangaId
   const params = useParams<{ sourceId?: string; mangaId?: string; type?: string; id?: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // State bypass: If the previous page (like Browse) already passed the manga data, we can skip Jikan API entirely!
+  const mangaStateData = location.state?.mangaData as MangaDetails | undefined
 
   // Determine if this is a MAL catalog manga or a source manga
   const isMAL = params.sourceId === 'mal' || params.type === 'mal'
@@ -334,6 +338,15 @@ function MangaDetailsPage() {
     setIsLoading(true)
     setError(null)
 
+    // Optimization: Bypass Jikan's unstable API 504 timeouts if we already have the data!
+    if (mangaStateData) {
+      console.log('[Details] Bypassing Jikan 504: Using pre-loaded manga data from router state', mangaStateData)
+      setManga(mangaStateData)
+      searchInSources(mangaStateData)
+      setIsLoading(false)
+      return
+    }
+
     try {
       const mangaData = await getMangaById(malId)
       setManga(mangaData)
@@ -341,7 +354,38 @@ function MangaDetailsPage() {
       // After loading manga, search for it in sources
       searchInSources(mangaData)
     } catch (err) {
-      console.error('Failed to load manga:', err)
+      console.error('[Details] Failed to load Jikan manga:', err)
+
+      // HYPER-RESILIENCE FALLBACK: If Jikan is completely dead (504), check if this manga is already in our SQLite Library.
+      // If it is, we can seamlessly reconstruct the page from the local offline cache!
+      if (window.codex && typeof window.codex.getMangaByMalId === 'function') {
+        try {
+          const localManga = await window.codex.getMangaByMalId(malId)
+          if (localManga) {
+            console.log('[Details] Jikan failed, but Manga rescued from Local SQLite Library!', localManga)
+
+            const rescuedMangaData: MangaDetails = {
+              malId: malId,
+              title: localManga.title,
+              coverUrl: localManga.thumbnail_url || localManga.thumbnailUrl || '',
+              synopsis: localManga.description || 'Sinopse não disponível offline.',
+              score: 0,
+              genres: [],
+              status: localManga.status || 'Unknown',
+              type: 'Manga',
+              authors: localManga.author ? [localManga.author] : []
+            }
+
+            setManga(rescuedMangaData)
+            searchInSources(rescuedMangaData)
+            setIsLoading(false)
+            return
+          }
+        } catch (dbErr) {
+          console.error('[Details] Failed to rescue manga from DB:', dbErr)
+        }
+      }
+
       setError('Failed to load manga information')
     } finally {
       setIsLoading(false)
@@ -453,29 +497,43 @@ function MangaDetailsPage() {
   useEffect(() => {
     const checkLibrary = async () => {
       const sourceInfo = sources.find(s => s.id === selectedSource)
-      if (sourceInfo?.mangaUrl && window.codex) {
-        try {
-          const mangaInLib = await window.codex.getMangaByUrl(sourceInfo.mangaUrl)
-          if (mangaInLib) {
-            setInLibrary(true)
-            setLibraryMangaId(mangaInLib.id)
+      let mangaInLib = null;
 
-            // Mark updates as seen when user views this manga
-            if (typeof window.codex.markUpdatesAsSeen === 'function') {
-              await window.codex.markUpdatesAsSeen(mangaInLib.id)
-              console.log('[Details] Marked updates as seen for manga', mangaInLib.id)
-            }
-          } else {
-            setInLibrary(false)
-            setLibraryMangaId(null)
+      if (window.codex) {
+        // Try exact source URL match first
+        if (sourceInfo?.mangaUrl) {
+          try {
+            mangaInLib = await window.codex.getMangaByUrl(sourceInfo.mangaUrl)
+          } catch (err) {
+            console.warn('[Details] URL match check failed:', err)
           }
-        } catch (err) {
-          console.warn('[Details] Could not check library status:', err)
+        }
+
+        // Fallback: If not found by URL, check if the underlying AniList/MAL ID exists in Library
+        if (!mangaInLib && malId && typeof window.codex.getMangaByMalId === 'function') {
+          try {
+            mangaInLib = await window.codex.getMangaByMalId(malId)
+          } catch (err) {
+            console.warn('[Details] MAL ID match check failed:', err)
+          }
+        }
+
+        if (mangaInLib) {
+          setInLibrary(true)
+          setLibraryMangaId(mangaInLib.id)
+
+          // Mark updates as seen when user views this manga
+          if (typeof window.codex.markUpdatesAsSeen === 'function') {
+            await window.codex.markUpdatesAsSeen(mangaInLib.id).catch(e => console.warn(e))
+          }
+        } else {
+          setInLibrary(false)
+          setLibraryMangaId(null)
         }
       }
     }
     checkLibrary()
-  }, [selectedSource, sources])
+  }, [selectedSource, sources, malId])
 
   // Save MAL ID to database if manga is in library
   useEffect(() => {
@@ -729,13 +787,29 @@ function MangaDetailsPage() {
   }
 
   if (error || !manga) {
+    const handleRetry = () => {
+      if (isMAL && malId) {
+        loadMangaFromMAL(malId)
+      } else if (sourceId && mangaUrl) {
+        loadMangaFromSource(sourceId, mangaUrl)
+      }
+    }
+
     return (
       <div className="page" style={{ padding: 0, position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="details-error" style={{ textAlign: 'center' }}>
-          <h2 style={{ marginBottom: 'var(--space-4)' }}>{error || 'Manga not found'}</h2>
-          <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-            Back
-          </button>
+          <h2 style={{ marginBottom: 'var(--space-2)' }}>{error || 'Manga not found'}</h2>
+          <p style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-4)', fontSize: '0.9rem' }}>
+            The server may be temporarily overloaded. Try again in a few seconds.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={handleRetry}>
+              ↻ Retry
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+              Back
+            </button>
+          </div>
         </div>
       </div>
     )

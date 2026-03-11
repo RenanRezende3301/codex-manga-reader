@@ -70,16 +70,17 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Fetch with retry and backoff
+ * Handles 429 (rate limit) AND 5xx (server overload/timeout) with exponential backoff
  */
-async function fetchWithRetry(url: string, retries = 3): Promise<any> {
+async function fetchWithRetry(url: string, retries = 4): Promise<any> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await fetch(url);
 
-      if (response.status === 429) {
-        // Rate limited - wait and retry
-        const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
-        console.warn(`[Jikan] Rate limited, waiting ${waitTime}ms before retry...`);
+      if (response.status === 429 || response.status >= 500) {
+        // Rate limited OR server error (502, 503, 504) - wait and retry
+        const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s, 16s
+        console.warn(`[Jikan] HTTP ${response.status}, waiting ${waitTime}ms before retry (attempt ${attempt + 1}/${retries})...`);
         await sleep(waitTime);
         continue;
       }
@@ -91,7 +92,9 @@ async function fetchWithRetry(url: string, retries = 3): Promise<any> {
       return await response.json();
     } catch (error) {
       if (attempt === retries - 1) throw error;
-      await sleep(1000);
+      const waitTime = Math.pow(2, attempt + 1) * 1000;
+      console.warn(`[Jikan] Request failed, waiting ${waitTime}ms before retry (attempt ${attempt + 1}/${retries})...`);
+      await sleep(waitTime);
     }
   }
   throw new Error('Max retries exceeded');
@@ -274,7 +277,8 @@ export async function getMangaByGenre(genreId: number, limit = 25, page = 1): Pr
  * Get manga by ID
  */
 export async function getMangaById(malId: number) {
-  const response = await apiRequest(`/manga/${malId}/full`);
+  // We explicitly avoid the '/full' endpoint because Jikan struggles with it and returns 504s frequently
+  const response = await apiRequest(`/manga/${malId}`);
   // ID fetch is always a single object, not a paginated array
   return normalizeManga(response.data);
 }

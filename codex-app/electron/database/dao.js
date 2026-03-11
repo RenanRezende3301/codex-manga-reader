@@ -85,6 +85,21 @@ const MangaDAO = {
   },
 
   /**
+   * Get manga by MAL ID
+   */
+  getByMalId(malId) {
+    const db = getDatabase();
+    return db.prepare(`
+      SELECT 
+        id, source_id as sourceId, source_url as sourceUrl, title, 
+        author, artist, description, status, thumbnail_url as thumbnailUrl,
+        local_cover_path as localCoverPath, favorite, last_read as lastRead,
+        in_library as inLibrary, mal_id as malId, date_added as dateAdded, date_updated as dateUpdated
+      FROM manga WHERE mal_id = ?
+    `).get(malId);
+  },
+
+  /**
    * Check if manga is in library
    */
   isInLibrary(sourceUrl) {

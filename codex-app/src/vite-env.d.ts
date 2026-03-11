@@ -32,6 +32,7 @@ interface Window {
     removeFromLibrary: (mangaId: number) => Promise<void>
     updateManga: (mangaId: number, data: Partial<Manga>) => Promise<Manga>
     getMangaByUrl: (sourceUrl: string) => Promise<Manga | null>
+    getMangaByMalId: (malId: number) => Promise<Manga | null>
 
     // Database - Chapters
     getChapters: (mangaId: number) => Promise<Chapter[]>

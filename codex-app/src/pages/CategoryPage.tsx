@@ -133,7 +133,7 @@ export default function CategoryPage() {
                     totalPages,
                     scrollY: window.scrollY
                   }))
-                  navigate(`/manga/mal/${manga.malId}`)
+                  navigate(`/manga/mal/${manga.malId}`, { state: { mangaData: manga } })
                 }}
               >
                 <img
