@@ -115,6 +115,15 @@
   background: var(--border-subtle);
 }
 
+.browse-row-empty {
+  min-width: 260px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
 /* Grid for search results */
 .browse-grid {
   display: grid;

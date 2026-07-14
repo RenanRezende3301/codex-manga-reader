@@ -24,6 +24,17 @@ interface CarouselRow {
   path?: string // Route path for View All
 }
 
+const COVER_PLACEHOLDER =
+  'data:image/svg+xml;charset=UTF-8,' +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+      <rect width="200" height="300" fill="#1a1a24"/>
+      <rect x="28" y="42" width="144" height="216" rx="10" fill="#242436" stroke="#3f3f58"/>
+      <path d="M64 102h72M64 132h72M64 162h48" stroke="#8b5cf6" stroke-width="10" stroke-linecap="round"/>
+      <text x="100" y="226" text-anchor="middle" fill="#b8b8c8" font-family="Arial, sans-serif" font-size="18" font-weight="700">No Cover</text>
+    </svg>
+  `)
+
 const STATUS_OPTIONS = [
   { value: '', name: 'All' },
   { value: 'publishing', name: 'Publishing' },
@@ -136,18 +147,19 @@ function BrowsePage() {
       getTopManga('bypopularity', 20, 1).then(res => {
         setHeroMangas(res.data.slice(0, 5)) // Keep top 5 for the hero banner
         updateRow(0, res.data)
-      }).catch(console.error)
-      getTopManga('favorite', 20, 1).then(res => updateRow(1, res.data)).catch(console.error)
-      getPublishingManga(20, 1).then(res => updateRow(2, res.data)).catch(console.error)
+      }).catch(error => handleRowError(0, error))
+      getTopManga('favorite', 20, 1).then(res => updateRow(1, res.data)).catch(error => handleRowError(1, error))
+      getPublishingManga(20, 1).then(res => updateRow(2, res.data)).catch(error => handleRowError(2, error))
 
       // 3. Load Dynamic Genre Carousels
       for (let i = 0; i < topGenres.length; i++) {
         getMangaByGenre(topGenres[i].id, 20, 1)
           .then(res => updateRow(3 + i, res.data))
-          .catch(console.error)
+          .catch(error => handleRowError(3 + i, error))
       }
     } catch (error) {
       console.error('Failed to initialize page:', error)
+      setRows(prev => prev.map(row => ({ ...row, loading: false })))
     }
   }
 
@@ -168,6 +180,11 @@ function BrowsePage() {
       }
       return newRows
     })
+  }
+
+  const handleRowError = (index: number, error: unknown) => {
+    console.error('Failed to load browse row:', error)
+    updateRow(index, [])
   }
 
   const handleSearchInput = (query: string) => {
@@ -300,12 +317,14 @@ function BrowsePage() {
       onClick={() => handleMangaClick(manga)}
     >
       <img
-        src={manga.coverUrl}
+        src={manga.coverUrl || COVER_PLACEHOLDER}
         alt={manga.title}
         className="manga-card-image"
         loading="lazy"
         onError={(e) => {
-          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x300/1a1a24/8b5cf6?text=No+Cover'
+          const image = e.target as HTMLImageElement
+          image.onerror = null
+          image.src = COVER_PLACEHOLDER
         }}
       />
       {manga.score > 0 && (
@@ -352,8 +371,10 @@ function BrowsePage() {
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="manga-card skeleton" />
           ))
-        ) : (
+        ) : row.data.length > 0 ? (
           row.data.map(renderMangaCard)
+        ) : (
+          <div className="browse-row-empty">Could not load this row right now.</div>
         )}
       </div>
     </div>
@@ -376,7 +397,7 @@ function BrowsePage() {
             <div className="hero-bg" style={{
               position: 'absolute',
               inset: 0,
-              backgroundImage: `url(${heroMangas[currentHeroIndex].coverUrl.replace('large_', '')})`, // Try to get highest res
+              backgroundImage: `url(${(heroMangas[currentHeroIndex].coverUrl || COVER_PLACEHOLDER).replace('large_', '')})`, // Try to get highest res
               backgroundSize: 'cover',
               backgroundPosition: 'center 20%',
               filter: 'blur(3px) brightness(0.5)',
