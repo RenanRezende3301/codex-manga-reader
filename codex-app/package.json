@@ -2,6 +2,7 @@
   "name": "codex",
   "version": "1.1.2",
   "description": "CODEX - Desktop Manga Reader with Declarative Source Protocol",
+  "homepage": "https://github.com/RenanRezende3301/codex-manga-reader",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite --host localhost --port 5173 --strictPort",
@@ -19,7 +20,10 @@
     "electron",
     "desktop"
   ],
-  "author": "",
+  "author": {
+    "name": "RenanRezende3301",
+    "email": "RenanRezende3301@users.noreply.github.com"
+  },
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -64,7 +68,8 @@
         "AppImage",
         "deb"
       ],
-      "category": "Utility"
+      "category": "Utility",
+      "maintainer": "RenanRezende3301 <RenanRezende3301@users.noreply.github.com>"
     },
     "win": {
       "target": [
