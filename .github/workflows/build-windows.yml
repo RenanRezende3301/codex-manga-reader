@@ -20,13 +20,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: codex-app/package-lock.json
 
       - name: Install Dependencies
         working-directory: codex-app
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      - name: Prepare Build Tooling
+        working-directory: codex-app
+        run: npm rebuild esbuild
 
       - name: Build Windows Executable
         working-directory: codex-app
